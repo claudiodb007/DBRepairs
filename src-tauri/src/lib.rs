@@ -28,6 +28,21 @@ fn backup_database(app: tauri::AppHandle) -> Result<String, String> {
     Ok(destination.to_string_lossy().into_owned())
 }
 
+#[tauri::command]
+fn export_text_file(app: tauri::AppHandle, filename: String, content: String) -> Result<String, String> {
+    if filename.trim().is_empty() || filename.contains('/') || filename.contains('\\') {
+        return Err("Invalid filename".into());
+    }
+
+    let downloads = app.path().download_dir().map_err(|e| e.to_string())?;
+    fs::create_dir_all(&downloads).map_err(|e| e.to_string())?;
+
+    let destination = downloads.join(filename);
+    fs::write(&destination, content.as_bytes()).map_err(|e| e.to_string())?;
+
+    Ok(destination.to_string_lossy().into_owned())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let migrations = vec![Migration {
@@ -43,7 +58,7 @@ pub fn run() {
                 .add_migrations("sqlite:dbrepairs.db", migrations)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![backup_database])
+        .invoke_handler(tauri::generate_handler![backup_database, export_text_file])
         .run(tauri::generate_context!())
         .expect("failed to run DBRepairs");
 }

@@ -122,5 +122,12 @@
   "customers.repairsTitle": "Réparations du client",
   "customers.repairsHint": "Historique des appareils reçus de ce client.",
   "customers.repairsCount": "{count} réparation(s)",
-  "customers.repairsEmpty": "Ce client n’a encore aucune réparation."
+  "customers.repairsEmpty": "Ce client n’a encore aucune réparation.",
+  "settings.export": "Export CSV",
+  "settings.exportHint": "Exporte les données vers des fichiers CSV compatibles avec Excel, LibreOffice et d’autres systèmes.",
+  "settings.exportCustomers": "Exporter les clients",
+  "settings.exportRepairs": "Exporter les réparations",
+  "settings.exportRunning": "Export en cours…",
+  "settings.exportCreated": "Export créé avec succès",
+  "settings.exportError": "Impossible d’exporter les données."
 }

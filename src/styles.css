@@ -210,3 +210,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .customer-repairs-empty { padding:22px; text-align:center; color:#9ca3af; border:1px dashed #d1d5db; border-radius:9px; }
 .customer-repairs-table { border:1px solid #e5e7eb; border-radius:9px; }
 .customer-repairs-table th, .customer-repairs-table td { padding:10px 12px; }
+
+/* CSV export */
+.export-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+@media (max-width:700px) { .export-actions { width:100%; } .export-actions button { flex:1 1 100%; } }
