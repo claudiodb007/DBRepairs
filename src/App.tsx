@@ -1,22 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CustomersPage from "./pages/CustomersPage";
 import LanguageDropdown from "./components/LanguageDropdown";
 import SettingsPage from "./pages/SettingsPage";
 import RepairsPage from "./pages/RepairsPage";
+import {
+  DashboardRecentRepair,
+  DashboardStats,
+  getDashboardStats,
+  listDashboardRecentRepairs,
+} from "./data/dashboard";
 import { useI18n } from "./i18n/I18nProvider";
 
 type Page = "dashboard" | "repairs" | "customers" | "settings";
 
-const cards = [
-  ["dashboard.openRepairs", "0"],
-  ["dashboard.waitingCustomer", "0"],
-  ["dashboard.ready", "0"],
-  ["dashboard.closedToday", "0"],
-] as const;
+const emptyStats: DashboardStats = {
+  openRepairs: 0,
+  waitingCustomer: 0,
+  ready: 0,
+  closedToday: 0,
+};
 
 export default function App() {
   const { t, locale, setLocale, locales } = useI18n();
   const [page, setPage] = useState<Page>("dashboard");
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>(emptyStats);
+  const [recentRepairs, setRecentRepairs] = useState<DashboardRecentRepair[]>([]);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState(false);
+
+  useEffect(() => {
+    if (page !== "dashboard") return;
+
+    let active = true;
+    setDashboardLoading(true);
+    setDashboardError(false);
+
+    Promise.all([getDashboardStats(), listDashboardRecentRepairs()])
+      .then(([stats, repairs]) => {
+        if (!active) return;
+        setDashboardStats(stats);
+        setRecentRepairs(repairs);
+      })
+      .catch((error) => {
+        console.error("Dashboard database error:", error);
+        if (active) setDashboardError(true);
+      })
+      .finally(() => {
+        if (active) setDashboardLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [page]);
 
   const languageControl = (
     <LanguageDropdown
@@ -27,6 +63,16 @@ export default function App() {
       searchLabel={t("settings.searchLanguage")}
     />
   );
+
+  const cards = [
+    ["dashboard.openRepairs", dashboardStats.openRepairs],
+    ["dashboard.waitingCustomer", dashboardStats.waitingCustomer],
+    ["dashboard.ready", dashboardStats.ready],
+    ["dashboard.closedToday", dashboardStats.closedToday],
+  ] as const;
+
+  const deviceLabel = (repair: DashboardRecentRepair) =>
+    [repair.device_type, repair.brand, repair.model].filter(Boolean).join(" · ") || "—";
 
   return (
     <div className="app-shell">
@@ -54,7 +100,7 @@ export default function App() {
             <section className="cards">
               {cards.map(([label, value]) => (
                 <article className="card" key={label}>
-                  <strong>{value}</strong>
+                  <strong>{dashboardLoading ? "…" : value}</strong>
                   <span>{t(label)}</span>
                 </article>
               ))}
@@ -68,7 +114,35 @@ export default function App() {
                 </div>
                 <button className="primary" onClick={() => setPage("repairs")}>+ {t("repair.new")}</button>
               </div>
-              <div className="empty-state">{t("repairs.empty")}</div>
+
+              {dashboardError ? (
+                <div className="empty-state">{t("database.error")}</div>
+              ) : recentRepairs.length === 0 ? (
+                <div className="empty-state">{dashboardLoading ? "…" : t("repairs.empty")}</div>
+              ) : (
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>{t("repair.number")}</th>
+                        <th>{t("repair.customer")}</th>
+                        <th>{t("repair.device")}</th>
+                        <th>{t("repair.status")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentRepairs.map((repair) => (
+                        <tr key={repair.id}>
+                          <td><strong>{repair.repair_number}</strong></td>
+                          <td>{repair.customer_name}</td>
+                          <td>{deviceLabel(repair)}</td>
+                          <td>{t(repair.status_label_key)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
           </>
         )}
@@ -79,7 +153,6 @@ export default function App() {
 
         {page === "settings" && <SettingsPage />}
       </main>
-
     </div>
   );
 }
