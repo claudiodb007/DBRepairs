@@ -8,6 +8,7 @@ import {
   updateCustomer,
 } from "../data/customers";
 import { useI18n } from "../i18n/I18nProvider";
+import { listRepairsByCustomer, Repair } from "../data/repairs";
 
 const emptyCustomer: CustomerInput = {
   name: "",
@@ -41,6 +42,8 @@ export default function CustomersPage() {
   const [form, setForm] = useState<CustomerInput>(emptyCustomer);
   const [formOpen, setFormOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [customerRepairs, setCustomerRepairs] = useState<Repair[]>([]);
+  const [customerRepairsLoading, setCustomerRepairsLoading] = useState(false);
 
   const refresh = useCallback(async (query = search) => {
     setLoading(true);
@@ -62,22 +65,34 @@ export default function CustomersPage() {
 
   function openCreate() {
     setEditing(null);
+    setCustomerRepairs([]);
     setForm(emptyCustomer);
     setError("");
     setFormOpen(true);
   }
 
-  function openEdit(customer: Customer) {
+  async function openEdit(customer: Customer) {
     setEditing(customer);
     setForm(toInput(customer));
     setError("");
+    setCustomerRepairs([]);
+    setCustomerRepairsLoading(true);
     setFormOpen(true);
+    try {
+      setCustomerRepairs(await listRepairsByCustomer(customer.id));
+    } catch (cause) {
+      console.error(cause);
+      setError(t("common.databaseError"));
+    } finally {
+      setCustomerRepairsLoading(false);
+    }
   }
 
   function closeForm() {
     if (saving) return;
     setFormOpen(false);
     setEditing(null);
+    setCustomerRepairs([]);
     setForm(emptyCustomer);
   }
 
@@ -169,7 +184,7 @@ export default function CustomersPage() {
                     <td>{customer.email || "—"}</td>
                     <td>{customer.tax_number || "—"}</td>
                     <td className="row-actions">
-                      <button className="secondary small" onClick={() => openEdit(customer)}>{t("common.edit")}</button>
+                      <button className="secondary small" onClick={() => void openEdit(customer)}>{t("common.edit")}</button>
                       <button className="danger-link small" onClick={() => void remove(customer)}>{t("common.delete")}</button>
                     </td>
                   </tr>
@@ -184,7 +199,7 @@ export default function CustomersPage() {
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) closeForm();
         }}>
-          <section className="modal" role="dialog" aria-modal="true" aria-labelledby="customer-form-title">
+          <section className={`modal ${editing ? "customer-detail-modal" : ""}`} role="dialog" aria-modal="true" aria-labelledby="customer-form-title">
             <div className="modal-head">
               <div>
                 <h2 id="customer-form-title">{editing ? t("customers.edit") : t("customers.new")}</h2>
@@ -224,6 +239,39 @@ export default function CustomersPage() {
                   <textarea rows={4} value={form.notes} onChange={(event) => updateField("notes", event.target.value)} />
                 </label>
               </div>
+
+              {editing && (
+                <section className="customer-repairs-section">
+                  <div className="customer-repairs-head">
+                    <div>
+                      <h3>{t("customers.repairsTitle")}</h3>
+                      <p>{t("customers.repairsHint")}</p>
+                    </div>
+                    {!customerRepairsLoading && <span className="muted">{t("customers.repairsCount").replace("{count}", String(customerRepairs.length))}</span>}
+                  </div>
+                  {customerRepairsLoading ? (
+                    <div className="customer-repairs-empty">{t("common.loading")}</div>
+                  ) : customerRepairs.length === 0 ? (
+                    <div className="customer-repairs-empty">{t("customers.repairsEmpty")}</div>
+                  ) : (
+                    <div className="table-wrap customer-repairs-table">
+                      <table>
+                        <thead><tr><th>{t("print.repairNumber")}</th><th>{t("repair.device")}</th><th>{t("repair.status")}</th><th>{t("repair.openedAt")}</th></tr></thead>
+                        <tbody>
+                          {customerRepairs.map((repair) => (
+                            <tr key={repair.id}>
+                              <td><strong>{repair.repair_number}</strong></td>
+                              <td>{[repair.device_type, repair.brand, repair.model].filter(Boolean).join(" · ") || "—"}</td>
+                              <td><span className="status-pill">{t(repair.status_label_key)}</span></td>
+                              <td>{new Date(repair.opened_at).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              )}
 
               <div className="modal-actions">
                 <button type="button" className="secondary" onClick={closeForm}>{t("common.cancel")}</button>

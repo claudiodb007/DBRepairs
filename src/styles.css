@@ -200,3 +200,13 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 /* Status change note */
 .status-note-field { padding:12px; border:1px solid #dbe2ea; border-radius:9px; background:#f8fafc; }
 .status-note-field small { color:#6b7280; font-size:12px; }
+
+/* Customer repair history */
+.customer-detail-modal { width:min(920px,100%); }
+.customer-repairs-section { margin-top:22px; padding-top:20px; border-top:1px solid #e5e7eb; }
+.customer-repairs-head { display:flex; justify-content:space-between; gap:16px; align-items:start; margin-bottom:12px; }
+.customer-repairs-head h3 { margin:0 0 4px; }
+.customer-repairs-head p { margin:0; color:#6b7280; font-size:13px; }
+.customer-repairs-empty { padding:22px; text-align:center; color:#9ca3af; border:1px dashed #d1d5db; border-radius:9px; }
+.customer-repairs-table { border:1px solid #e5e7eb; border-radius:9px; }
+.customer-repairs-table th, .customer-repairs-table td { padding:10px 12px; }

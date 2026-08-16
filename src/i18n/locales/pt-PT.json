@@ -118,5 +118,9 @@
   "settings.backupError": "Não foi possível criar a cópia de segurança.",
   "repair.statusNote": "Nota da alteração de estado",
   "repair.statusNotePlaceholder": "Ex.: Cliente avisado por telefone",
-  "repair.statusNoteHint": "Opcional. A nota ficará guardada no histórico desta alteração."
+  "repair.statusNoteHint": "Opcional. A nota ficará guardada no histórico desta alteração.",
+  "customers.repairsTitle": "Reparações do cliente",
+  "customers.repairsHint": "Histórico de equipamentos recebidos deste cliente.",
+  "customers.repairsCount": "{count} reparação(ões)",
+  "customers.repairsEmpty": "Este cliente ainda não tem reparações."
 }

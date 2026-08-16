@@ -118,5 +118,9 @@
   "settings.backupError": "Could not create the backup.",
   "repair.statusNote": "Status change note",
   "repair.statusNotePlaceholder": "E.g. Customer notified by phone",
-  "repair.statusNoteHint": "Optional. The note will be stored with this status change."
+  "repair.statusNoteHint": "Optional. The note will be stored with this status change.",
+  "customers.repairsTitle": "Customer repairs",
+  "customers.repairsHint": "History of devices received from this customer.",
+  "customers.repairsCount": "{count} repair(s)",
+  "customers.repairsEmpty": "This customer has no repairs yet."
 }

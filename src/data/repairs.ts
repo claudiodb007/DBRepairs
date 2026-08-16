@@ -40,6 +40,16 @@ export async function listRepairs(): Promise<Repair[]> {
     ORDER BY r.id DESC`);
 }
 
+export async function listRepairsByCustomer(customerId: number): Promise<Repair[]> {
+  const db = await getDatabase();
+  return db.select(`SELECT r.*, c.name customer_name, s.code status_code, s.label_key status_label_key
+    FROM repairs r
+    JOIN customers c ON c.id=r.customer_id
+    JOIN repair_statuses s ON s.id=r.status_id
+    WHERE r.customer_id=?
+    ORDER BY r.id DESC`, [customerId]);
+}
+
 export async function getRepair(id: number): Promise<Repair | null> {
   const db = await getDatabase();
   const rows = await db.select<Repair[]>(`SELECT r.*, c.name customer_name, s.code status_code, s.label_key status_label_key

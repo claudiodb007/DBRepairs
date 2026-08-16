@@ -118,5 +118,9 @@
   "settings.backupError": "Impossible de créer la sauvegarde.",
   "repair.statusNote": "Note de changement de statut",
   "repair.statusNotePlaceholder": "Ex. : Client prévenu par téléphone",
-  "repair.statusNoteHint": "Facultatif. La note sera enregistrée dans l’historique de ce changement."
+  "repair.statusNoteHint": "Facultatif. La note sera enregistrée dans l’historique de ce changement.",
+  "customers.repairsTitle": "Réparations du client",
+  "customers.repairsHint": "Historique des appareils reçus de ce client.",
+  "customers.repairsCount": "{count} réparation(s)",
+  "customers.repairsEmpty": "Ce client n’a encore aucune réparation."
 }
