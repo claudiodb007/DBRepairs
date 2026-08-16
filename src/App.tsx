@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CustomersPage from "./pages/CustomersPage";
 import LanguageDropdown from "./components/LanguageDropdown";
+import SettingsPage from "./pages/SettingsPage";
 import RepairsPage from "./pages/RepairsPage";
 import { useI18n } from "./i18n/I18nProvider";
 
@@ -76,14 +77,7 @@ export default function App() {
 
         {page === "repairs" && <RepairsPage />}
 
-        {page === "settings" && (
-          <>
-            <header className="page-header"><div><h1>{t("settings.title")}</h1><p>{t("settings.subtitle")}</p></div></header>
-            <section className="panel settings-panel">
-              <label className="field settings-field"><span>{t("settings.language")}</span>{languageControl}</label>
-            </section>
-          </>
-        )}
+        {page === "settings" && <SettingsPage />}
       </main>
 
     </div>

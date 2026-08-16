@@ -6,3 +6,5 @@ src-tauri/target/
 *.db-wal
 .DS_Store
 .env
+
+src-tauri/gen/
