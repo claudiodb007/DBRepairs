@@ -51,6 +51,14 @@ export default function RepairsPage(){
   }
   useEffect(()=>{load(); getOfficeSettings().then(setOffice).catch(()=>{});},[]);
   const byId=useMemo(()=>new Map(customers.map(c=>[c.id,c])),[customers]);
+  const deviceSuggestions=useMemo(()=>{
+    const unique=(values:(string|null)[])=>Array.from(new Set(values.map(v=>v?.trim()).filter((v):v is string=>Boolean(v)))).sort((a,b)=>a.localeCompare(b));
+    return {
+      types:unique(repairs.map(r=>r.device_type)),
+      brands:unique(repairs.map(r=>r.brand)),
+      models:unique(repairs.map(r=>r.model)),
+    };
+  },[repairs]);
   const filteredRepairs=useMemo(()=>{
     const q=search.trim().toLocaleLowerCase();
     return repairs.filter(r=>{
@@ -194,8 +202,8 @@ export default function RepairsPage(){
           </button>
         </div>
       </div>}
-      <label className="field"><span>{t("repair.deviceType")}</span><input value={form.device_type} onChange={e=>field("device_type",e.target.value)}/></label><label className="field"><span>{t("repair.brand")}</span><input value={form.brand} onChange={e=>field("brand",e.target.value)}/></label>
-      <label className="field"><span>{t("repair.model")}</span><input value={form.model} onChange={e=>field("model",e.target.value)}/></label><label className="field"><span>{t("repair.serialOrImei")}</span><input value={form.serial_number} onChange={e=>field("serial_number",e.target.value)}/></label>
+      <label className="field"><span>{t("repair.deviceType")}</span><input list="dbrepairs-device-types" value={form.device_type} onChange={e=>field("device_type",e.target.value)}/></label><label className="field"><span>{t("repair.brand")}</span><input list="dbrepairs-brands" value={form.brand} onChange={e=>field("brand",e.target.value)}/></label>
+      <label className="field"><span>{t("repair.model")}</span><input list="dbrepairs-models" value={form.model} onChange={e=>field("model",e.target.value)}/></label><label className="field"><span>{t("repair.serialOrImei")}</span><input value={form.serial_number} onChange={e=>field("serial_number",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.reportedFault")} *</span><textarea rows={3} value={form.reported_fault} onChange={e=>field("reported_fault",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.accessories")}</span><textarea rows={2} value={form.accessories} onChange={e=>field("accessories",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.generalCondition")}</span><textarea rows={2} value={form.general_condition} onChange={e=>field("general_condition",e.target.value)}/></label>
@@ -207,8 +215,8 @@ export default function RepairsPage(){
       <label className="field full"><span>{t("customer.name")} *</span><select value={editForm.customer_id} onChange={e=>editField("customer_id",Number(e.target.value))}>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` — ${c.company}`:""}</option>)}</select></label>
       <label className="field"><span>{t("repair.status")}</span><select value={editForm.status_id} onChange={e=>editField("status_id",Number(e.target.value))}>{statuses.map(s=><option key={s.id} value={s.id}>{t(s.label_key)}</option>)}</select></label><label className="field"><span>{t("repair.estimatedValue")}</span><input type="number" step="0.01" min="0" value={editForm.estimated_value} onChange={e=>editField("estimated_value",e.target.value)}/></label>
       {editForm.status_id!==editing.status_id&&<label className="field full status-note-field"><span>{t("repair.statusNote")}</span><input value={statusNote} onChange={e=>setStatusNote(e.target.value)} placeholder={t("repair.statusNotePlaceholder")}/><small>{t("repair.statusNoteHint")}</small></label>}
-      <label className="field"><span>{t("repair.deviceType")}</span><input value={editForm.device_type} onChange={e=>editField("device_type",e.target.value)}/></label><label className="field"><span>{t("repair.brand")}</span><input value={editForm.brand} onChange={e=>editField("brand",e.target.value)}/></label>
-      <label className="field"><span>{t("repair.model")}</span><input value={editForm.model} onChange={e=>editField("model",e.target.value)}/></label><label className="field"><span>{t("repair.serialOrImei")}</span><input value={editForm.serial_number} onChange={e=>editField("serial_number",e.target.value)}/></label>
+      <label className="field"><span>{t("repair.deviceType")}</span><input list="dbrepairs-device-types" value={editForm.device_type} onChange={e=>editField("device_type",e.target.value)}/></label><label className="field"><span>{t("repair.brand")}</span><input list="dbrepairs-brands" value={editForm.brand} onChange={e=>editField("brand",e.target.value)}/></label>
+      <label className="field"><span>{t("repair.model")}</span><input list="dbrepairs-models" value={editForm.model} onChange={e=>editField("model",e.target.value)}/></label><label className="field"><span>{t("repair.serialOrImei")}</span><input value={editForm.serial_number} onChange={e=>editField("serial_number",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.reportedFault")} *</span><textarea rows={3} value={editForm.reported_fault} onChange={e=>editField("reported_fault",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.diagnosis")}</span><textarea rows={3} value={editForm.diagnosis} onChange={e=>editField("diagnosis",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.workPerformed")}</span><textarea rows={3} value={editForm.work_performed} onChange={e=>editField("work_performed",e.target.value)}/></label>
@@ -218,6 +226,10 @@ export default function RepairsPage(){
       <label className="field full"><span>{t("repair.internalNotes")}</span><textarea rows={3} value={editForm.internal_notes} onChange={e=>editField("internal_notes",e.target.value)}/></label>
       </div><aside className="history-panel"><h3>{t("repair.history")}</h3>{history.length===0?<p className="muted">{t("repair.historyEmpty")}</p>:<div className="history-list">{history.map(h=><div className="history-item" key={h.id}><strong>{t(h.status_label_key)}</strong><span>{new Date(h.changed_at).toLocaleString()}</span>{h.note&&<p>{h.note}</p>}</div>)}</div>}</aside></div>
       <div className="modal-actions"><button type="button" className="secondary" onClick={()=>setPrinting(editing)}>{t("print.preview")}</button><button type="button" className="secondary" onClick={()=>setEditing(null)}>{t("common.close")}</button><button className="primary" disabled={saving||!editForm.reported_fault.trim()}>{saving?t("common.saving"):t("common.save")}</button></div></form></section></div>}
+
+    <datalist id="dbrepairs-device-types">{deviceSuggestions.types.map(value=><option key={value} value={value}/>)}</datalist>
+    <datalist id="dbrepairs-brands">{deviceSuggestions.brands.map(value=><option key={value} value={value}/>)}</datalist>
+    <datalist id="dbrepairs-models">{deviceSuggestions.models.map(value=><option key={value} value={value}/>)}</datalist>
 
     {printing&&(()=>{const c=byId.get(printing.customer_id);return <div className="print-preview-backdrop"><div className="print-preview-shell"><div className="print-preview-toolbar"><strong>{t("print.preview")}</strong><div><button className="secondary" onClick={()=>setPrinting(null)}>{t("common.close")}</button><button className="primary" onClick={()=>window.print()}>{t("print.print")}</button></div></div><RepairPrintSheet data={{repairNumber:printing.repair_number,openedAt:new Date(printing.opened_at).toLocaleString(),customerName:printing.customer_name,phone:c?.phone||undefined,email:c?.email||undefined,deviceType:printing.device_type||undefined,brand:printing.brand||undefined,model:printing.model||undefined,serialNumber:printing.serial_number||undefined,imei:printing.imei||undefined,reportedFault:printing.reported_fault||undefined,accessories:printing.accessories||undefined,generalCondition:printing.general_condition||undefined,internalNotes:printing.internal_notes||undefined}} office={office}/></div></div>})()}
   </>;
