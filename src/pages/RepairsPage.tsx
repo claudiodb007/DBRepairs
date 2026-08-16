@@ -1,0 +1,33 @@
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { listCustomers, Customer } from "../data/customers";
+import { createRepair, listRepairs, listStatuses, Repair, RepairInput, RepairStatus } from "../data/repairs";
+import { useI18n } from "../i18n/I18nProvider";
+import RepairPrintSheet from "../components/RepairPrintSheet";
+
+const blank: RepairInput = {customer_id:0,status_id:0,device_type:"",brand:"",model:"",serial_number:"",imei:"",reported_fault:"",accessories:"",general_condition:"",estimated_value:"",internal_notes:""};
+
+export default function RepairsPage(){
+  const {t}=useI18n(); const [repairs,setRepairs]=useState<Repair[]>([]); const [customers,setCustomers]=useState<Customer[]>([]); const [statuses,setStatuses]=useState<RepairStatus[]>([]);
+  const [form,setForm]=useState<RepairInput>(blank); const [open,setOpen]=useState(false); const [printing,setPrinting]=useState<Repair|null>(null); const [error,setError]=useState("");
+  async function load(){ try { const [r,c,s]=await Promise.all([listRepairs(),listCustomers(),listStatuses()]); setRepairs(r); setCustomers(c); setStatuses(s); if(s.length) setForm(f=>({...f,status_id:f.status_id||s[0].id})); } catch { setError(t("common.databaseError")); } }
+  useEffect(()=>{load();},[]);
+  const byId=useMemo(()=>new Map(customers.map(c=>[c.id,c])),[customers]);
+  async function submit(e:FormEvent){e.preventDefault(); if(!form.customer_id||!form.status_id||!form.reported_fault.trim()) return; try{await createRepair(form); setOpen(false); setForm({...blank,status_id:statuses[0]?.id||0}); await load();}catch{setError(t("common.saveError"));}}
+  const field=(k:keyof RepairInput,v:string|number)=>setForm(f=>({...f,[k]:v}));
+  return <>
+    <header className="page-header"><div><h1>{t("repairs.title")}</h1><p>{t("repairs.emptyHint")}</p></div><button className="primary" onClick={()=>setOpen(true)}>+ {t("repair.new")}</button></header>
+    {error&&<div className="alert error">{error}</div>}
+    <section className="panel customers-panel">{repairs.length===0?<div className="empty-state compact">{t("repairs.empty")}</div>:<div className="table-wrap"><table><thead><tr><th>{t("print.repairNumber")}</th><th>{t("customer.name")}</th><th>{t("repair.device")}</th><th>{t("repair.status")}</th><th>{t("repair.openedAt")}</th><th></th></tr></thead><tbody>{repairs.map(r=><tr key={r.id}><td><strong>{r.repair_number}</strong></td><td>{r.customer_name}</td><td>{[r.device_type,r.brand,r.model].filter(Boolean).join(" · ")||"—"}</td><td>{t(r.status_label_key)}</td><td>{new Date(r.opened_at).toLocaleString()}</td><td className="actions-column"><button className="secondary small" onClick={()=>setPrinting(r)}>{t("print.preview")}</button></td></tr>)}</tbody></table></div>}</section>
+    {open&&<div className="modal-backdrop"><section className="modal repair-modal"><div className="modal-head"><div><h2>{t("repair.new")}</h2><p>{t("repair.formHint")}</p></div><button className="icon-button" onClick={()=>setOpen(false)}>×</button></div><form onSubmit={submit}><div className="form-grid">
+      <label className="field full"><span>{t("customer.name")} *</span><select value={form.customer_id} onChange={e=>field("customer_id",Number(e.target.value))}><option value={0}>{t("repair.selectCustomer")}</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` — ${c.company}`:""}</option>)}</select></label>
+      <label className="field"><span>{t("repair.deviceType")}</span><input value={form.device_type} onChange={e=>field("device_type",e.target.value)}/></label><label className="field"><span>{t("repair.brand")}</span><input value={form.brand} onChange={e=>field("brand",e.target.value)}/></label>
+      <label className="field"><span>{t("repair.model")}</span><input value={form.model} onChange={e=>field("model",e.target.value)}/></label><label className="field"><span>{t("repair.serialOrImei")}</span><input value={form.serial_number} onChange={e=>field("serial_number",e.target.value)}/></label>
+      <label className="field full"><span>{t("repair.reportedFault")} *</span><textarea rows={3} value={form.reported_fault} onChange={e=>field("reported_fault",e.target.value)}/></label>
+      <label className="field full"><span>{t("repair.accessories")}</span><textarea rows={2} value={form.accessories} onChange={e=>field("accessories",e.target.value)}/></label>
+      <label className="field full"><span>{t("repair.generalCondition")}</span><textarea rows={2} value={form.general_condition} onChange={e=>field("general_condition",e.target.value)}/></label>
+      <label className="field"><span>{t("repair.status")}</span><select value={form.status_id} onChange={e=>field("status_id",Number(e.target.value))}>{statuses.map(s=><option key={s.id} value={s.id}>{t(s.label_key)}</option>)}</select></label><label className="field"><span>{t("repair.estimatedValue")}</span><input type="number" step="0.01" min="0" value={form.estimated_value} onChange={e=>field("estimated_value",e.target.value)}/></label>
+      <label className="field full"><span>{t("repair.internalNotes")}</span><textarea rows={3} value={form.internal_notes} onChange={e=>field("internal_notes",e.target.value)}/></label>
+    </div><div className="modal-actions"><button type="button" className="secondary" onClick={()=>setOpen(false)}>{t("common.cancel")}</button><button className="primary" disabled={!form.customer_id||!form.reported_fault.trim()}>{t("common.save")}</button></div></form></section></div>}
+    {printing&&(()=>{const c=byId.get(printing.customer_id);return <div className="print-preview-backdrop"><div className="print-preview-shell"><div className="print-preview-toolbar"><strong>{t("print.preview")}</strong><div><button className="secondary" onClick={()=>setPrinting(null)}>{t("common.close")}</button><button className="primary" onClick={()=>window.print()}>{t("print.print")}</button></div></div><RepairPrintSheet data={{repairNumber:printing.repair_number,openedAt:new Date(printing.opened_at).toLocaleString(),customerName:printing.customer_name,phone:c?.phone||undefined,email:c?.email||undefined,deviceType:printing.device_type||undefined,brand:printing.brand||undefined,model:printing.model||undefined,serialNumber:printing.serial_number||undefined,imei:printing.imei||undefined,reportedFault:printing.reported_fault||undefined,accessories:printing.accessories||undefined,generalCondition:printing.general_condition||undefined,internalNotes:printing.internal_notes||undefined}}/></div></div>})()}
+  </>;
+}

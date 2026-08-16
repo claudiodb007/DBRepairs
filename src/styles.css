@@ -112,3 +112,12 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .print-preview-shell { width: auto; margin: 0; }
   .print-a4 { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; }
 }
+
+/* Branding + repair form */
+.brand { display:flex; align-items:center; gap:10px; }
+.brand img { width:42px; height:42px; border-radius:10px; object-fit:cover; }
+.brand > div { display:flex; align-items:baseline; gap:6px; }
+.repair-modal { width:min(760px,100%); }
+.slip-brand-wrap { display:flex !important; grid-template-columns:none !important; flex-direction:row; align-items:center; gap:2.5mm !important; }
+.slip-brand-wrap img { width:11mm; height:11mm; border-radius:2mm; }
+.slip-brand-wrap > div { display:grid; gap:1mm; }

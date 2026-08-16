@@ -69,5 +69,12 @@
   "repair.reportedFault": "Problema indicado",
   "repair.accessories": "Acessórios entregues",
   "repair.generalCondition": "Estado geral",
-  "repair.internalNotes": "Notas internas"
+  "repair.internalNotes": "Notas internas",
+  "repair.status": "Estado",
+  "repair.formHint": "Preencha apenas os dados necessários para receber o equipamento.",
+  "repair.selectCustomer": "Selecionar cliente…",
+  "repair.deviceType": "Tipo de equipamento",
+  "repair.brand": "Marca",
+  "repair.model": "Modelo",
+  "repair.estimatedValue": "Valor previsto"
 }

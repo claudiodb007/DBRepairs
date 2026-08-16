@@ -35,7 +35,7 @@ function RepairHalf({ title, data, shopCopy = false }: { title: string; data: Re
   return (
     <article className="repair-slip">
       <div className="slip-head">
-        <div><strong className="slip-brand">DBRepairs</strong><span>{title}</span></div>
+        <div className="slip-brand-wrap"><img src="/dbrepairs-icon.png" alt="" /><div><strong className="slip-brand">DBRepairs</strong><span>{title}</span></div></div>
         <div className="slip-number"><span>{t("print.repairNumber")}</span><strong>{data.repairNumber}</strong></div>
       </div>
       <div className="slip-grid">

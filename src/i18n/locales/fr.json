@@ -69,5 +69,12 @@
   "repair.reportedFault": "Problème signalé",
   "repair.accessories": "Accessoires remis",
   "repair.generalCondition": "État général",
-  "repair.internalNotes": "Notes internes"
+  "repair.internalNotes": "Notes internes",
+  "repair.status": "État",
+  "repair.formHint": "Saisissez uniquement les informations nécessaires à la réception de l’appareil.",
+  "repair.selectCustomer": "Sélectionner un client…",
+  "repair.deviceType": "Type d’appareil",
+  "repair.brand": "Marque",
+  "repair.model": "Modèle",
+  "repair.estimatedValue": "Valeur estimée"
 }

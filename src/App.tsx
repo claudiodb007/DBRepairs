@@ -1,7 +1,7 @@
 import { useState } from "react";
 import CustomersPage from "./pages/CustomersPage";
 import LanguageDropdown from "./components/LanguageDropdown";
-import RepairPrintSheet from "./components/RepairPrintSheet";
+import RepairsPage from "./pages/RepairsPage";
 import { useI18n } from "./i18n/I18nProvider";
 
 type Page = "dashboard" | "repairs" | "customers" | "settings";
@@ -13,26 +13,9 @@ const cards = [
   ["dashboard.closedToday", "0"],
 ] as const;
 
-const printPreviewData = {
-  repairNumber: "2026-000001",
-  openedAt: "16/08/2026 11:54",
-  customerName: "Cliente de exemplo",
-  phone: "912 345 678",
-  email: "cliente@example.com",
-  deviceType: "Telemóvel",
-  brand: "Marca",
-  model: "Modelo",
-  serialNumber: "SN123456789",
-  reportedFault: "Equipamento não liga.",
-  accessories: "Capa e carregador.",
-  generalCondition: "Marcas normais de utilização.",
-  internalNotes: "Área reservada à cópia da loja.",
-};
-
 export default function App() {
   const { t, locale, setLocale, locales } = useI18n();
   const [page, setPage] = useState<Page>("dashboard");
-  const [printPreview, setPrintPreview] = useState(false);
 
   const languageControl = (
     <LanguageDropdown
@@ -47,7 +30,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand">DBRepairs <span>0.1</span></div>
+        <div className="brand"><img src="/dbrepairs-icon.png" alt="" /><div>DBRepairs <span>0.1</span></div></div>
         <nav>
           <button className={page === "dashboard" ? "active" : ""} onClick={() => setPage("dashboard")}>{t("nav.dashboard")}</button>
           <button className={page === "repairs" ? "active" : ""} onClick={() => setPage("repairs")}>{t("nav.repairs")}</button>
@@ -91,18 +74,7 @@ export default function App() {
 
         {page === "customers" && <CustomersPage />}
 
-        {page === "repairs" && (
-          <>
-            <header className="page-header">
-              <div><h1>{t("repairs.title")}</h1><p>{t("repairs.emptyHint")}</p></div>
-              <div className="header-actions">
-                <button className="secondary" onClick={() => setPrintPreview(true)}>{t("print.preview")}</button>
-                <button className="primary">+ {t("repair.new")}</button>
-              </div>
-            </header>
-            <section className="panel"><div className="empty-state compact">{t("repairs.empty")}</div></section>
-          </>
-        )}
+        {page === "repairs" && <RepairsPage />}
 
         {page === "settings" && (
           <>
@@ -114,20 +86,6 @@ export default function App() {
         )}
       </main>
 
-      {printPreview && (
-        <div className="print-preview-backdrop">
-          <div className="print-preview-shell">
-            <div className="print-preview-toolbar">
-              <strong>{t("print.preview")}</strong>
-              <div>
-                <button className="secondary" onClick={() => setPrintPreview(false)}>{t("common.close")}</button>
-                <button className="primary" onClick={() => window.print()}>{t("print.print")}</button>
-              </div>
-            </div>
-            <RepairPrintSheet data={printPreviewData} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
