@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { listCustomers, Customer } from "../data/customers";
+import { createCustomer, listCustomers, Customer, CustomerInput } from "../data/customers";
 import {
   createRepair,
   getRepair,
@@ -19,6 +19,7 @@ import { defaultOfficeSettings, getOfficeSettings, OfficeSettings } from "../dat
 
 const blank: RepairInput = {customer_id:0,status_id:0,device_type:"",brand:"",model:"",serial_number:"",imei:"",reported_fault:"",accessories:"",general_condition:"",estimated_value:"",internal_notes:""};
 const blankEdit: RepairUpdateInput = {...blank,diagnosis:"",work_performed:"",final_value:""};
+const blankCustomer: CustomerInput = {name:"",company:"",taxNumber:"",phone:"",email:"",address:"",notes:""};
 
 export default function RepairsPage(){
   const {t}=useI18n();
@@ -36,6 +37,9 @@ export default function RepairsPage(){
   const [search,setSearch]=useState("");
   const [statusFilter,setStatusFilter]=useState(0);
   const [scopeFilter,setScopeFilter]=useState<"all"|"open"|"closed">("all");
+  const [quickCustomerOpen,setQuickCustomerOpen]=useState(false);
+  const [quickCustomer,setQuickCustomer]=useState<CustomerInput>(blankCustomer);
+  const [quickCustomerSaving,setQuickCustomerSaving]=useState(false);
 
   async function load(){
     try {
@@ -63,8 +67,25 @@ export default function RepairsPage(){
 
   async function submit(e:FormEvent){
     e.preventDefault(); if(!form.customer_id||!form.status_id||!form.reported_fault.trim()) return;
-    try{await createRepair(form); setOpen(false); setForm({...blank,status_id:statuses[0]?.id||0}); await load();}
+    try{await createRepair(form); setOpen(false); setQuickCustomerOpen(false); setQuickCustomer(blankCustomer); setForm({...blank,status_id:statuses[0]?.id||0}); await load();}
     catch{setError(t("common.saveError"));}
+  }
+
+  async function saveQuickCustomer(){
+    if(!quickCustomer.name.trim()||quickCustomerSaving) return;
+    setQuickCustomerSaving(true); setError("");
+    try {
+      const id=await createCustomer(quickCustomer);
+      const updated=await listCustomers();
+      setCustomers(updated);
+      setForm(f=>({...f,customer_id:id}));
+      setQuickCustomer(blankCustomer);
+      setQuickCustomerOpen(false);
+    } catch {
+      setError(t("common.saveError"));
+    } finally {
+      setQuickCustomerSaving(false);
+    }
   }
 
   async function openRepair(id:number){
@@ -100,7 +121,7 @@ export default function RepairsPage(){
   const editField=(k:keyof RepairUpdateInput,v:string|number)=>setEditForm(f=>({...f,[k]:v}));
 
   return <>
-    <header className="page-header"><div><h1>{t("repairs.title")}</h1><p>{t("repairs.emptyHint")}</p></div><button className="primary" onClick={()=>setOpen(true)}>+ {t("repair.new")}</button></header>
+    <header className="page-header"><div><h1>{t("repairs.title")}</h1><p>{t("repairs.emptyHint")}</p></div><button className="primary" onClick={()=>{setQuickCustomerOpen(false);setQuickCustomer(blankCustomer);setOpen(true);}}>+ {t("repair.new")}</button></header>
     {error&&<div className="alert error">{error}</div>}
     <section className="panel customers-panel">
       {repairs.length===0?<div className="empty-state compact">{t("repairs.empty")}</div>:<>
@@ -122,7 +143,36 @@ export default function RepairsPage(){
     </section>
 
     {open&&<div className="modal-backdrop"><section className="modal repair-modal"><div className="modal-head"><div><h2>{t("repair.new")}</h2><p>{t("repair.formHint")}</p></div><button className="icon-button" onClick={()=>setOpen(false)}>×</button></div><form onSubmit={submit}><div className="form-grid">
-      <label className="field full"><span>{t("customer.name")} *</span><select value={form.customer_id} onChange={e=>field("customer_id",Number(e.target.value))}><option value={0}>{t("repair.selectCustomer")}</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` — ${c.company}`:""}</option>)}</select></label>
+      <div className="field full">
+        <span>{t("customer.name")} *</span>
+        <div className="customer-select-row">
+          <select value={form.customer_id} onChange={e=>field("customer_id",Number(e.target.value))}>
+            <option value={0}>{t("repair.selectCustomer")}</option>
+            {customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` — ${c.company}`:""}</option>)}
+          </select>
+          <button type="button" className="secondary" onClick={()=>setQuickCustomerOpen(v=>!v)}>
+            {quickCustomerOpen?t("repair.hideNewCustomer"):`+ ${t("customers.new")}`}
+          </button>
+        </div>
+      </div>
+      {quickCustomerOpen&&<div className="quick-customer-card full">
+        <div className="quick-customer-head">
+          <div><strong>{t("repair.quickCustomerTitle")}</strong><p>{t("repair.quickCustomerHint")}</p></div>
+        </div>
+        <div className="form-grid">
+          <label className="field full"><span>{t("customer.name")} *</span><input autoFocus value={quickCustomer.name} onChange={e=>setQuickCustomer(c=>({...c,name:e.target.value}))}/></label>
+          <label className="field"><span>{t("customer.phone")}</span><input value={quickCustomer.phone} onChange={e=>setQuickCustomer(c=>({...c,phone:e.target.value}))}/></label>
+          <label className="field"><span>{t("customer.email")}</span><input type="email" value={quickCustomer.email} onChange={e=>setQuickCustomer(c=>({...c,email:e.target.value}))}/></label>
+          <label className="field"><span>{t("customer.taxNumber")}</span><input value={quickCustomer.taxNumber} onChange={e=>setQuickCustomer(c=>({...c,taxNumber:e.target.value}))}/></label>
+          <label className="field"><span>{t("customer.company")}</span><input value={quickCustomer.company} onChange={e=>setQuickCustomer(c=>({...c,company:e.target.value}))}/></label>
+        </div>
+        <div className="quick-customer-actions">
+          <button type="button" className="secondary" onClick={()=>{setQuickCustomerOpen(false);setQuickCustomer(blankCustomer);}}>{t("common.cancel")}</button>
+          <button type="button" className="primary" disabled={quickCustomerSaving||!quickCustomer.name.trim()} onClick={()=>void saveQuickCustomer()}>
+            {quickCustomerSaving?t("common.saving"):t("repair.createAndSelectCustomer")}
+          </button>
+        </div>
+      </div>}
       <label className="field"><span>{t("repair.deviceType")}</span><input value={form.device_type} onChange={e=>field("device_type",e.target.value)}/></label><label className="field"><span>{t("repair.brand")}</span><input value={form.brand} onChange={e=>field("brand",e.target.value)}/></label>
       <label className="field"><span>{t("repair.model")}</span><input value={form.model} onChange={e=>field("model",e.target.value)}/></label><label className="field"><span>{t("repair.serialOrImei")}</span><input value={form.serial_number} onChange={e=>field("serial_number",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.reportedFault")} *</span><textarea rows={3} value={form.reported_fault} onChange={e=>field("reported_fault",e.target.value)}/></label>

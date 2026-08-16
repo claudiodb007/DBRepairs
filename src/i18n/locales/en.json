@@ -104,5 +104,9 @@
   "repairs.scopeOpen": "Open",
   "repairs.scopeClosed": "Closed",
   "repairs.results": "{count} repair(s)",
-  "repairs.noResults": "No repairs match the filters."
+  "repairs.noResults": "No repairs match the filters.",
+  "repair.quickCustomerTitle": "Create customer in this repair",
+  "repair.quickCustomerHint": "Save the essential details now. You can complete the customer record later.",
+  "repair.createAndSelectCustomer": "Create and select",
+  "repair.hideNewCustomer": "Hide new customer"
 }

@@ -172,3 +172,17 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .repair-scope-filter button { flex:1; }
   .repair-results-count { margin-left:0; }
 }
+
+/* Inline customer creation */
+.customer-select-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; }
+.customer-select-row select { width:100%; }
+.quick-customer-card { grid-column:1 / -1; border:1px solid #dbe2ea; border-radius:10px; background:#f8fafc; padding:15px; display:grid; gap:14px; }
+.quick-customer-head strong { display:block; font-size:14px; }
+.quick-customer-head p { margin:4px 0 0; font-size:13px; color:#6b7280; }
+.quick-customer-actions { display:flex; justify-content:flex-end; gap:8px; }
+@media (max-width:700px) {
+  .customer-select-row { grid-template-columns:1fr; }
+  .quick-customer-card { grid-column:auto; }
+  .quick-customer-actions { flex-direction:column-reverse; }
+  .quick-customer-actions button { width:100%; }
+}

@@ -104,5 +104,9 @@
   "repairs.scopeOpen": "Abiertas",
   "repairs.scopeClosed": "Cerradas",
   "repairs.results": "{count} reparación(es)",
-  "repairs.noResults": "Ninguna reparación coincide con los filtros."
+  "repairs.noResults": "Ninguna reparación coincide con los filtros.",
+  "repair.quickCustomerTitle": "Crear cliente en esta reparación",
+  "repair.quickCustomerHint": "Guarda ahora los datos esenciales. Puedes completar la ficha del cliente más tarde.",
+  "repair.createAndSelectCustomer": "Crear y seleccionar",
+  "repair.hideNewCustomer": "Ocultar nuevo cliente"
 }
