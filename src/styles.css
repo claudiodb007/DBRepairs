@@ -156,3 +156,19 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .settings-actions { display:flex; justify-content:flex-end; margin-top:20px; padding-top:18px; border-top:1px solid #e5e7eb; }
 .slip-company-details { max-width:120mm; color:#444; font-size:7.5pt; line-height:1.25; font-weight:400; }
 @media (max-width:700px) { .office-settings-grid { grid-template-columns:1fr; } .logo-setting { max-width:320px; } }
+
+/* Repair list filters */
+.repairs-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:16px 20px; border-bottom:1px solid #e5e7eb; background:#fafafa; }
+.repair-search-input { flex:1 1 340px; min-width:220px; }
+.repairs-toolbar select { min-width:180px; }
+.repair-scope-filter { display:flex; padding:3px; border:1px solid #d1d5db; border-radius:9px; background:white; }
+.repair-scope-filter button { border:0; border-radius:6px; padding:7px 10px; background:transparent; color:#4b5563; cursor:pointer; }
+.repair-scope-filter button.active { background:#111827; color:white; }
+.repair-results-count { margin-left:auto; }
+@media (max-width: 760px) {
+  .repairs-toolbar { align-items:stretch; }
+  .repair-search-input, .repairs-toolbar select { width:100%; min-width:0; }
+  .repair-scope-filter { width:100%; }
+  .repair-scope-filter button { flex:1; }
+  .repair-results-count { margin-left:0; }
+}

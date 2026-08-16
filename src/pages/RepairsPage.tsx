@@ -33,6 +33,9 @@ export default function RepairsPage(){
   const [history,setHistory]=useState<RepairStatusHistory[]>([]);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
+  const [search,setSearch]=useState("");
+  const [statusFilter,setStatusFilter]=useState(0);
+  const [scopeFilter,setScopeFilter]=useState<"all"|"open"|"closed">("all");
 
   async function load(){
     try {
@@ -43,6 +46,20 @@ export default function RepairsPage(){
   }
   useEffect(()=>{load(); getOfficeSettings().then(setOffice).catch(()=>{});},[]);
   const byId=useMemo(()=>new Map(customers.map(c=>[c.id,c])),[customers]);
+  const filteredRepairs=useMemo(()=>{
+    const q=search.trim().toLocaleLowerCase();
+    return repairs.filter(r=>{
+      if(statusFilter && r.status_id!==statusFilter) return false;
+      const closed=r.status_code==="DELIVERED"||r.status_code==="CANCELLED";
+      if(scopeFilter==="open" && closed) return false;
+      if(scopeFilter==="closed" && !closed) return false;
+      if(!q) return true;
+      return [
+        r.repair_number,r.customer_name,r.device_type,r.brand,r.model,
+        r.serial_number,r.imei,r.reported_fault
+      ].some(value=>(value||"").toLocaleLowerCase().includes(q));
+    });
+  },[repairs,search,statusFilter,scopeFilter]);
 
   async function submit(e:FormEvent){
     e.preventDefault(); if(!form.customer_id||!form.status_id||!form.reported_fault.trim()) return;
@@ -85,7 +102,24 @@ export default function RepairsPage(){
   return <>
     <header className="page-header"><div><h1>{t("repairs.title")}</h1><p>{t("repairs.emptyHint")}</p></div><button className="primary" onClick={()=>setOpen(true)}>+ {t("repair.new")}</button></header>
     {error&&<div className="alert error">{error}</div>}
-    <section className="panel customers-panel">{repairs.length===0?<div className="empty-state compact">{t("repairs.empty")}</div>:<div className="table-wrap"><table><thead><tr><th>{t("print.repairNumber")}</th><th>{t("customer.name")}</th><th>{t("repair.device")}</th><th>{t("repair.status")}</th><th>{t("repair.openedAt")}</th><th></th></tr></thead><tbody>{repairs.map(r=><tr key={r.id} className="clickable-row" onDoubleClick={()=>openRepair(r.id)}><td><strong>{r.repair_number}</strong></td><td>{r.customer_name}</td><td>{[r.device_type,r.brand,r.model].filter(Boolean).join(" · ")||"—"}</td><td><span className="status-pill">{t(r.status_label_key)}</span></td><td>{new Date(r.opened_at).toLocaleString()}</td><td className="actions-column"><div className="row-actions"><button className="secondary small" onClick={()=>openRepair(r.id)}>{t("repair.open")}</button><button className="secondary small" onClick={()=>setPrinting(r)}>{t("print.preview")}</button></div></td></tr>)}</tbody></table></div>}</section>
+    <section className="panel customers-panel">
+      {repairs.length===0?<div className="empty-state compact">{t("repairs.empty")}</div>:<>
+        <div className="repairs-toolbar">
+          <input className="repair-search-input" value={search} onChange={e=>setSearch(e.target.value)} placeholder={t("repairs.search")}/>
+          <select value={statusFilter} onChange={e=>setStatusFilter(Number(e.target.value))} aria-label={t("repairs.filterStatus")}>
+            <option value={0}>{t("repairs.allStatuses")}</option>
+            {statuses.map(s=><option key={s.id} value={s.id}>{t(s.label_key)}</option>)}
+          </select>
+          <div className="repair-scope-filter" role="group">
+            <button type="button" className={scopeFilter==="all"?"active":""} onClick={()=>setScopeFilter("all")}>{t("repairs.scopeAll")}</button>
+            <button type="button" className={scopeFilter==="open"?"active":""} onClick={()=>setScopeFilter("open")}>{t("repairs.scopeOpen")}</button>
+            <button type="button" className={scopeFilter==="closed"?"active":""} onClick={()=>setScopeFilter("closed")}>{t("repairs.scopeClosed")}</button>
+          </div>
+          <span className="muted repair-results-count">{t("repairs.results").replace("{count}",String(filteredRepairs.length))}</span>
+        </div>
+        {filteredRepairs.length===0?<div className="empty-state compact">{t("repairs.noResults")}</div>:<div className="table-wrap"><table><thead><tr><th>{t("print.repairNumber")}</th><th>{t("customer.name")}</th><th>{t("repair.device")}</th><th>{t("repair.status")}</th><th>{t("repair.openedAt")}</th><th></th></tr></thead><tbody>{filteredRepairs.map(r=><tr key={r.id} className="clickable-row" onDoubleClick={()=>openRepair(r.id)}><td><strong>{r.repair_number}</strong></td><td>{r.customer_name}</td><td>{[r.device_type,r.brand,r.model].filter(Boolean).join(" · ")||"—"}</td><td><span className="status-pill">{t(r.status_label_key)}</span></td><td>{new Date(r.opened_at).toLocaleString()}</td><td className="actions-column"><div className="row-actions"><button className="secondary small" onClick={()=>openRepair(r.id)}>{t("repair.open")}</button><button className="secondary small" onClick={()=>setPrinting(r)}>{t("print.preview")}</button></div></td></tr>)}</tbody></table></div>}
+      </>}
+    </section>
 
     {open&&<div className="modal-backdrop"><section className="modal repair-modal"><div className="modal-head"><div><h2>{t("repair.new")}</h2><p>{t("repair.formHint")}</p></div><button className="icon-button" onClick={()=>setOpen(false)}>×</button></div><form onSubmit={submit}><div className="form-grid">
       <label className="field full"><span>{t("customer.name")} *</span><select value={form.customer_id} onChange={e=>field("customer_id",Number(e.target.value))}><option value={0}>{t("repair.selectCustomer")}</option>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` — ${c.company}`:""}</option>)}</select></label>

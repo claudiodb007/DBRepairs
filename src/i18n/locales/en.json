@@ -96,5 +96,13 @@
   "settings.logoHint": "PNG, JPG or WebP. Maximum 2 MB.",
   "settings.logoInvalid": "Choose a valid image file.",
   "settings.logoTooLarge": "The logo cannot exceed 2 MB.",
-  "settings.saved": "Settings saved."
+  "settings.saved": "Settings saved.",
+  "repairs.search": "Search by repair, customer, device, brand, model, serial/IMEI or problem…",
+  "repairs.filterStatus": "Filter by status",
+  "repairs.allStatuses": "All statuses",
+  "repairs.scopeAll": "All",
+  "repairs.scopeOpen": "Open",
+  "repairs.scopeClosed": "Closed",
+  "repairs.results": "{count} repair(s)",
+  "repairs.noResults": "No repairs match the filters."
 }

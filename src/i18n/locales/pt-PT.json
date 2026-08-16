@@ -96,5 +96,13 @@
   "settings.logoHint": "PNG, JPG ou WebP. Máximo 2 MB.",
   "settings.logoInvalid": "Escolhe um ficheiro de imagem válido.",
   "settings.logoTooLarge": "O logótipo não pode exceder 2 MB.",
-  "settings.saved": "Definições guardadas."
+  "settings.saved": "Definições guardadas.",
+  "repairs.search": "Pesquisar por reparação, cliente, equipamento, marca, modelo, serial/IMEI ou problema…",
+  "repairs.filterStatus": "Filtrar por estado",
+  "repairs.allStatuses": "Todos os estados",
+  "repairs.scopeAll": "Todas",
+  "repairs.scopeOpen": "Abertas",
+  "repairs.scopeClosed": "Fechadas",
+  "repairs.results": "{count} reparação(ões)",
+  "repairs.noResults": "Nenhuma reparação corresponde aos filtros."
 }
