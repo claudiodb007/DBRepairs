@@ -33,6 +33,7 @@ export default function RepairsPage(){
   const [editForm,setEditForm]=useState<RepairUpdateInput>(blankEdit);
   const [history,setHistory]=useState<RepairStatusHistory[]>([]);
   const [saving,setSaving]=useState(false);
+  const [statusNote,setStatusNote]=useState("");
   const [error,setError]=useState("");
   const [search,setSearch]=useState("");
   const [statusFilter,setStatusFilter]=useState(0);
@@ -119,6 +120,7 @@ export default function RepairsPage(){
         general_condition:repair.general_condition||"",estimated_value:repair.estimated_value?.toString()||"",internal_notes:repair.internal_notes||"",
         diagnosis:repair.diagnosis||"",work_performed:repair.work_performed||"",final_value:repair.final_value?.toString()||""
       });
+      setStatusNote("");
     } catch { setError(t("common.databaseError")); }
   }
 
@@ -126,10 +128,11 @@ export default function RepairsPage(){
     e.preventDefault(); if(!editing||!editForm.customer_id||!editForm.status_id||!editForm.reported_fault.trim()) return;
     setSaving(true); setError("");
     try {
-      await updateRepair(editing.id,editForm,editing.status_id);
+      await updateRepair(editing.id,editForm,editing.status_id,statusNote);
       const [updated,statusHistory]=await Promise.all([getRepair(editing.id),listRepairStatusHistory(editing.id)]);
       if(updated) setEditing(updated);
       setHistory(statusHistory);
+      setStatusNote("");
       await load();
     } catch { setError(t("common.saveError")); }
     finally { setSaving(false); }
@@ -203,6 +206,7 @@ export default function RepairsPage(){
     {editing&&<div className="modal-backdrop"><section className="modal repair-detail-modal"><div className="modal-head"><div><h2>{editing.repair_number}</h2><p>{editing.customer_name} · {new Date(editing.opened_at).toLocaleString()}</p></div><button className="icon-button" onClick={()=>setEditing(null)}>×</button></div><form onSubmit={saveEdit}><div className="detail-layout"><div className="form-grid detail-form">
       <label className="field full"><span>{t("customer.name")} *</span><select value={editForm.customer_id} onChange={e=>editField("customer_id",Number(e.target.value))}>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` — ${c.company}`:""}</option>)}</select></label>
       <label className="field"><span>{t("repair.status")}</span><select value={editForm.status_id} onChange={e=>editField("status_id",Number(e.target.value))}>{statuses.map(s=><option key={s.id} value={s.id}>{t(s.label_key)}</option>)}</select></label><label className="field"><span>{t("repair.estimatedValue")}</span><input type="number" step="0.01" min="0" value={editForm.estimated_value} onChange={e=>editField("estimated_value",e.target.value)}/></label>
+      {editForm.status_id!==editing.status_id&&<label className="field full status-note-field"><span>{t("repair.statusNote")}</span><input value={statusNote} onChange={e=>setStatusNote(e.target.value)} placeholder={t("repair.statusNotePlaceholder")}/><small>{t("repair.statusNoteHint")}</small></label>}
       <label className="field"><span>{t("repair.deviceType")}</span><input value={editForm.device_type} onChange={e=>editField("device_type",e.target.value)}/></label><label className="field"><span>{t("repair.brand")}</span><input value={editForm.brand} onChange={e=>editField("brand",e.target.value)}/></label>
       <label className="field"><span>{t("repair.model")}</span><input value={editForm.model} onChange={e=>editField("model",e.target.value)}/></label><label className="field"><span>{t("repair.serialOrImei")}</span><input value={editForm.serial_number} onChange={e=>editField("serial_number",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.reportedFault")} *</span><textarea rows={3} value={editForm.reported_fault} onChange={e=>editField("reported_fault",e.target.value)}/></label>

@@ -196,3 +196,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 /* Database backup */
 .backup-success { margin-top:16px; padding:12px 14px; border:1px solid #bbf7d0; border-radius:9px; background:#f0fdf4; color:#166534; display:grid; gap:6px; }
 .backup-success code { color:#374151; background:white; border:1px solid #e5e7eb; border-radius:6px; padding:7px 9px; overflow-wrap:anywhere; font-size:12px; }
+
+/* Status change note */
+.status-note-field { padding:12px; border:1px solid #dbe2ea; border-radius:9px; background:#f8fafc; }
+.status-note-field small { color:#6b7280; font-size:12px; }

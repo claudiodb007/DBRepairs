@@ -72,7 +72,7 @@ export async function createRepair(input: RepairInput): Promise<number> {
   return id;
 }
 
-export async function updateRepair(id: number, input: RepairUpdateInput, previousStatusId: number): Promise<void> {
+export async function updateRepair(id: number, input: RepairUpdateInput, previousStatusId: number, statusNote = ""): Promise<void> {
   const db = await getDatabase();
   await db.execute(`UPDATE repairs SET
     customer_id=?, status_id=?, device_type=?, brand=?, model=?, serial_number=?, imei=?, reported_fault=?, accessories=?, general_condition=?,
@@ -84,6 +84,6 @@ export async function updateRepair(id: number, input: RepairUpdateInput, previou
       input.estimated_value?Number(input.estimated_value):null,input.final_value?Number(input.final_value):null,input.internal_notes||null,input.status_id,id
     ]);
   if (input.status_id !== previousStatusId) {
-    await db.execute("INSERT INTO repair_status_history (repair_id,status_id) VALUES (?,?)", [id,input.status_id]);
+    await db.execute("INSERT INTO repair_status_history (repair_id,status_id,note) VALUES (?,?,?)", [id,input.status_id,statusNote.trim()||null]);
   }
 }

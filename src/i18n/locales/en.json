@@ -115,5 +115,8 @@
   "settings.createBackup": "Create backup",
   "settings.backupRunning": "Creating backup…",
   "settings.backupCreated": "Backup created successfully",
-  "settings.backupError": "Could not create the backup."
+  "settings.backupError": "Could not create the backup.",
+  "repair.statusNote": "Status change note",
+  "repair.statusNotePlaceholder": "E.g. Customer notified by phone",
+  "repair.statusNoteHint": "Optional. The note will be stored with this status change."
 }

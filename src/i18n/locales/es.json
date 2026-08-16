@@ -115,5 +115,8 @@
   "settings.createBackup": "Crear copia de seguridad",
   "settings.backupRunning": "Creando copia…",
   "settings.backupCreated": "Copia creada correctamente",
-  "settings.backupError": "No se pudo crear la copia de seguridad."
+  "settings.backupError": "No se pudo crear la copia de seguridad.",
+  "repair.statusNote": "Nota del cambio de estado",
+  "repair.statusNotePlaceholder": "Ej.: Cliente avisado por teléfono",
+  "repair.statusNoteHint": "Opcional. La nota quedará guardada en el historial de este cambio."
 }

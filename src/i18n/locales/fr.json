@@ -115,5 +115,8 @@
   "settings.createBackup": "Créer une sauvegarde",
   "settings.backupRunning": "Création de la sauvegarde…",
   "settings.backupCreated": "Sauvegarde créée avec succès",
-  "settings.backupError": "Impossible de créer la sauvegarde."
+  "settings.backupError": "Impossible de créer la sauvegarde.",
+  "repair.statusNote": "Note de changement de statut",
+  "repair.statusNotePlaceholder": "Ex. : Client prévenu par téléphone",
+  "repair.statusNoteHint": "Facultatif. La note sera enregistrée dans l’historique de ce changement."
 }
