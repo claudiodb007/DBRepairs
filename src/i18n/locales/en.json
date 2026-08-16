@@ -109,5 +109,11 @@
   "repair.quickCustomerHint": "Save the essential details now. You can complete the customer record later.",
   "repair.createAndSelectCustomer": "Create and select",
   "repair.hideNewCustomer": "Hide new customer",
-  "repair.saveAndPrint": "Save and print"
+  "repair.saveAndPrint": "Save and print",
+  "settings.backup": "Backup",
+  "settings.backupHint": "Creates a complete copy of the DBRepairs database in your Downloads folder.",
+  "settings.createBackup": "Create backup",
+  "settings.backupRunning": "Creating backup…",
+  "settings.backupCreated": "Backup created successfully",
+  "settings.backupError": "Could not create the backup."
 }

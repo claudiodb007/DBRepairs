@@ -109,5 +109,11 @@
   "repair.quickCustomerHint": "Enregistrez maintenant les informations essentielles. Vous pourrez compléter la fiche client plus tard.",
   "repair.createAndSelectCustomer": "Créer et sélectionner",
   "repair.hideNewCustomer": "Masquer le nouveau client",
-  "repair.saveAndPrint": "Enregistrer et imprimer"
+  "repair.saveAndPrint": "Enregistrer et imprimer",
+  "settings.backup": "Sauvegarde",
+  "settings.backupHint": "Crée une copie complète de la base de données DBRepairs dans le dossier Téléchargements.",
+  "settings.createBackup": "Créer une sauvegarde",
+  "settings.backupRunning": "Création de la sauvegarde…",
+  "settings.backupCreated": "Sauvegarde créée avec succès",
+  "settings.backupError": "Impossible de créer la sauvegarde."
 }
