@@ -108,5 +108,6 @@
   "repair.quickCustomerTitle": "Create customer in this repair",
   "repair.quickCustomerHint": "Save the essential details now. You can complete the customer record later.",
   "repair.createAndSelectCustomer": "Create and select",
-  "repair.hideNewCustomer": "Hide new customer"
+  "repair.hideNewCustomer": "Hide new customer",
+  "repair.saveAndPrint": "Save and print"
 }

@@ -186,3 +186,9 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .quick-customer-actions { flex-direction:column-reverse; }
   .quick-customer-actions button { width:100%; }
 }
+
+/* Save and print */
+.repair-create-actions { flex-wrap:wrap; }
+@media (max-width:700px) {
+  .repair-create-actions button { flex:1 1 100%; }
+}

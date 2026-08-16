@@ -108,5 +108,6 @@
   "repair.quickCustomerTitle": "Crear cliente en esta reparación",
   "repair.quickCustomerHint": "Guarda ahora los datos esenciales. Puedes completar la ficha del cliente más tarde.",
   "repair.createAndSelectCustomer": "Crear y seleccionar",
-  "repair.hideNewCustomer": "Ocultar nuevo cliente"
+  "repair.hideNewCustomer": "Ocultar nuevo cliente",
+  "repair.saveAndPrint": "Guardar e imprimir"
 }

@@ -65,10 +65,28 @@ export default function RepairsPage(){
     });
   },[repairs,search,statusFilter,scopeFilter]);
 
+  async function saveNewRepair(printAfterSave=false){
+    if(!form.customer_id||!form.status_id||!form.reported_fault.trim()||saving) return;
+    setSaving(true); setError("");
+    try{
+      const id=await createRepair(form);
+      const created=printAfterSave?await getRepair(id):null;
+      setOpen(false);
+      setQuickCustomerOpen(false);
+      setQuickCustomer(blankCustomer);
+      setForm({...blank,status_id:statuses[0]?.id||0});
+      await load();
+      if(created) setPrinting(created);
+    } catch {
+      setError(t("common.saveError"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function submit(e:FormEvent){
-    e.preventDefault(); if(!form.customer_id||!form.status_id||!form.reported_fault.trim()) return;
-    try{await createRepair(form); setOpen(false); setQuickCustomerOpen(false); setQuickCustomer(blankCustomer); setForm({...blank,status_id:statuses[0]?.id||0}); await load();}
-    catch{setError(t("common.saveError"));}
+    e.preventDefault();
+    await saveNewRepair(false);
   }
 
   async function saveQuickCustomer(){
@@ -180,7 +198,7 @@ export default function RepairsPage(){
       <label className="field full"><span>{t("repair.generalCondition")}</span><textarea rows={2} value={form.general_condition} onChange={e=>field("general_condition",e.target.value)}/></label>
       <label className="field"><span>{t("repair.status")}</span><select value={form.status_id} onChange={e=>field("status_id",Number(e.target.value))}>{statuses.map(s=><option key={s.id} value={s.id}>{t(s.label_key)}</option>)}</select></label><label className="field"><span>{t("repair.estimatedValue")}</span><input type="number" step="0.01" min="0" value={form.estimated_value} onChange={e=>field("estimated_value",e.target.value)}/></label>
       <label className="field full"><span>{t("repair.internalNotes")}</span><textarea rows={3} value={form.internal_notes} onChange={e=>field("internal_notes",e.target.value)}/></label>
-    </div><div className="modal-actions"><button type="button" className="secondary" onClick={()=>setOpen(false)}>{t("common.cancel")}</button><button className="primary" disabled={!form.customer_id||!form.reported_fault.trim()}>{t("common.save")}</button></div></form></section></div>}
+    </div><div className="modal-actions repair-create-actions"><button type="button" className="secondary" onClick={()=>setOpen(false)}>{t("common.cancel")}</button><button type="submit" className="secondary" disabled={saving||!form.customer_id||!form.reported_fault.trim()}>{saving?t("common.saving"):t("common.save")}</button><button type="button" className="primary" disabled={saving||!form.customer_id||!form.reported_fault.trim()} onClick={()=>void saveNewRepair(true)}>{saving?t("common.saving"):t("repair.saveAndPrint")}</button></div></form></section></div>}
 
     {editing&&<div className="modal-backdrop"><section className="modal repair-detail-modal"><div className="modal-head"><div><h2>{editing.repair_number}</h2><p>{editing.customer_name} · {new Date(editing.opened_at).toLocaleString()}</p></div><button className="icon-button" onClick={()=>setEditing(null)}>×</button></div><form onSubmit={saveEdit}><div className="detail-layout"><div className="form-grid detail-form">
       <label className="field full"><span>{t("customer.name")} *</span><select value={editForm.customer_id} onChange={e=>editField("customer_id",Number(e.target.value))}>{customers.map(c=><option key={c.id} value={c.id}>{c.name}{c.company?` — ${c.company}`:""}</option>)}</select></label>
