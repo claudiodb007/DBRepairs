@@ -15,6 +15,7 @@ export default function SettingsPage(){
   const [error,setError]=useState("");
   const [backupRunning,setBackupRunning]=useState(false);
   const [backupPath,setBackupPath]=useState("");
+  const [restoreRunning,setRestoreRunning]=useState(false);
   const [exportRunning,setExportRunning]=useState<"customers"|"repairs"|"">("");
   const [exportPath,setExportPath]=useState("");
 
@@ -51,6 +52,23 @@ export default function SettingsPage(){
     }finally{
       setBackupRunning(false);
     }
+  }
+
+  async function restoreBackup(e:ChangeEvent<HTMLInputElement>){
+    const file=e.target.files?.[0];
+    e.target.value="";
+    if(!file||restoreRunning) return;
+    if(!file.name.toLowerCase().endsWith(".db")){setError(t("settings.restoreInvalid"));return;}
+    if(!window.confirm(t("settings.restoreConfirm"))) return;
+    setRestoreRunning(true);setError("");
+    try{
+      const bytes=new Uint8Array(await file.arrayBuffer());
+      const header=new TextDecoder("utf-8").decode(bytes.slice(0,16));
+      if(header!=="SQLite format 3\0"){setError(t("settings.restoreInvalid"));setRestoreRunning(false);return;}
+      const db=await getDatabase();
+      await db.execute("PRAGMA wal_checkpoint(FULL)");
+      await invoke("restore_database",{data:Array.from(bytes)});
+    }catch(cause){console.error(cause);setError(t("settings.restoreError"));setRestoreRunning(false);}
   }
 
   const csvCell=(value:unknown)=>{
@@ -113,9 +131,15 @@ export default function SettingsPage(){
       <section className="panel settings-panel">
         <div className="panel-head">
           <div><h2>{t("settings.backup")}</h2><p>{t("settings.backupHint")}</p></div>
-          <button type="button" className="secondary" disabled={backupRunning} onClick={()=>void createBackup()}>
-            {backupRunning?t("settings.backupRunning"):t("settings.createBackup")}
-          </button>
+          <div className="export-actions">
+            <button type="button" className="secondary" disabled={backupRunning||restoreRunning} onClick={()=>void createBackup()}>
+              {backupRunning?t("settings.backupRunning"):t("settings.createBackup")}
+            </button>
+            <label className={`secondary file-button ${restoreRunning?"disabled":""}`}>
+              {restoreRunning?t("settings.restoreRunning"):t("settings.restoreBackup")}
+              <input type="file" accept=".db,application/x-sqlite3,application/vnd.sqlite3" disabled={backupRunning||restoreRunning} onChange={restoreBackup}/>
+            </label>
+          </div>
         </div>
         {backupPath&&<div className="backup-success"><strong>{t("settings.backupCreated")}</strong><code>{backupPath}</code></div>}
       </section>

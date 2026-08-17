@@ -129,5 +129,10 @@
   "settings.exportRepairs": "Exportar reparações",
   "settings.exportRunning": "A exportar…",
   "settings.exportCreated": "Exportação criada com sucesso",
-  "settings.exportError": "Não foi possível exportar os dados."
+  "settings.exportError": "Não foi possível exportar os dados.",
+  "settings.restoreBackup": "Repor cópia de segurança",
+  "settings.restoreRunning": "A preparar reposição…",
+  "settings.restoreConfirm": "Repor esta cópia da base de dados? A base atual será guardada automaticamente e o DBRepairs será reiniciado.",
+  "settings.restoreInvalid": "Escolhe uma cópia .db SQLite válida do DBRepairs.",
+  "settings.restoreError": "Não foi possível repor a cópia de segurança."
 }
