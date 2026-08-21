@@ -1,0 +1,10 @@
+.git
+.env
+node_modules
+dist
+src-tauri/target
+server/node_modules
+npm-debug.log*
+*.db
+*.db-shm
+*.db-wal

@@ -2,7 +2,7 @@
 
 DBRepairs is a simple, open-source repair-shop manager focused on the practical day-to-day workflow of repair workshops and service centres.
 
-The project is a clean rewrite built with React, TypeScript, Tauri 2 and SQLite.
+The project is a clean rewrite with a shared React/TypeScript interface. It can run as a Tauri 2 desktop application with local SQLite, or as a Docker server with a central PostgreSQL database.
 
 ## Features
 
@@ -70,6 +70,14 @@ Live overview with:
 - CSV export for customers.
 - CSV export for repairs.
 
+### Server edition
+
+- One central PostgreSQL database for simultaneous use from multiple computers.
+- Browser interface reusing the desktop workflow and translations.
+- Transactional HTTP API and automatic schema migrations.
+- Docker Compose stack for a server or Portainer.
+- Manual and scheduled PostgreSQL backups with configurable retention.
+
 ## Technology
 
 - React
@@ -78,6 +86,8 @@ Live overview with:
 - Tauri 2
 - Rust
 - SQLite
+- Node.js API and PostgreSQL (server edition)
+- Docker Compose and nginx (server edition)
 
 ## Linux installation
 
@@ -114,11 +124,23 @@ npm run tauri build
 
 Native packages should normally be built on the target operating system or through CI.
 
+### Server / Docker
+
+Copy `.env.example` to `.env`, set a strong `POSTGRES_PASSWORD`, then run:
+
+```bash
+docker compose up -d --build
+```
+
+Open `http://SERVER-IP:8080`. See `docker/README.md` for Portainer, backup, restore and update instructions.
+
 ## Data location
 
-DBRepairs uses a local SQLite database. Application data is stored in the platform-specific application configuration directory.
+The desktop edition uses a local SQLite database. Application data is stored in the platform-specific application configuration directory.
 
 Use the built-in backup function before moving or reinstalling systems.
+
+The server edition stores shared data in its PostgreSQL Docker volume. Desktop and server data are intentionally independent; starting the server does not modify or migrate an existing desktop SQLite database.
 
 ## Translation
 
@@ -132,8 +154,8 @@ The application uses one global language for the interface, forms, statuses and 
 - Fast repair intake and lookup.
 - Avoid unnecessary ERP complexity.
 - SQLite by default.
-- Desktop first.
-- Docker/server edition planned from the same project.
+- Desktop SQLite remains simple and independent.
+- Docker/server edition reuses the same frontend and domain workflow.
 - Easy community translations.
 
 ## License

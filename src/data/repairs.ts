@@ -1,4 +1,6 @@
 import { getDatabase } from "./database";
+import { api } from "./api";
+import { isServerMode } from "./runtime";
 
 export type RepairStatus = { id: number; code: string; label_key: string; sort_order: number };
 export type Repair = {
@@ -29,11 +31,13 @@ export type RepairStatusHistory = {
 };
 
 export async function listStatuses(): Promise<RepairStatus[]> {
+  if (isServerMode) return api("/statuses");
   const db = await getDatabase();
   return db.select("SELECT id, code, label_key, sort_order FROM repair_statuses WHERE active=1 ORDER BY sort_order");
 }
 
 export async function listRepairs(): Promise<Repair[]> {
+  if (isServerMode) return api("/repairs");
   const db = await getDatabase();
   return db.select(`SELECT r.*, c.name customer_name, s.code status_code, s.label_key status_label_key
     FROM repairs r JOIN customers c ON c.id=r.customer_id JOIN repair_statuses s ON s.id=r.status_id
@@ -41,6 +45,7 @@ export async function listRepairs(): Promise<Repair[]> {
 }
 
 export async function listRepairsByCustomer(customerId: number): Promise<Repair[]> {
+  if (isServerMode) return api(`/repairs?customerId=${customerId}`);
   const db = await getDatabase();
   return db.select(`SELECT r.*, c.name customer_name, s.code status_code, s.label_key status_label_key
     FROM repairs r
@@ -51,6 +56,10 @@ export async function listRepairsByCustomer(customerId: number): Promise<Repair[
 }
 
 export async function getRepair(id: number): Promise<Repair | null> {
+  if (isServerMode) {
+    try { return await api(`/repairs/${id}`); }
+    catch (error) { if (error instanceof Error && error.message === "Not found") return null; throw error; }
+  }
   const db = await getDatabase();
   const rows = await db.select<Repair[]>(`SELECT r.*, c.name customer_name, s.code status_code, s.label_key status_label_key
     FROM repairs r JOIN customers c ON c.id=r.customer_id JOIN repair_statuses s ON s.id=r.status_id
@@ -59,6 +68,7 @@ export async function getRepair(id: number): Promise<Repair | null> {
 }
 
 export async function listRepairStatusHistory(repairId: number): Promise<RepairStatusHistory[]> {
+  if (isServerMode) return api(`/repairs/${repairId}/history`);
   const db = await getDatabase();
   return db.select(`SELECT h.id, h.status_id, s.code status_code, s.label_key status_label_key, h.changed_at, h.note
     FROM repair_status_history h JOIN repair_statuses s ON s.id=h.status_id
@@ -71,6 +81,10 @@ function repairNumber(id: number) {
 }
 
 export async function createRepair(input: RepairInput): Promise<number> {
+  if (isServerMode) {
+    const result = await api<{ id: number }>("/repairs", { method: "POST", body: JSON.stringify(input) });
+    return result.id;
+  }
   const db = await getDatabase();
   const temp = `TMP-${Date.now()}`;
   const result = await db.execute(`INSERT INTO repairs
@@ -83,6 +97,7 @@ export async function createRepair(input: RepairInput): Promise<number> {
 }
 
 export async function updateRepair(id: number, input: RepairUpdateInput, previousStatusId: number, statusNote = ""): Promise<void> {
+  if (isServerMode) return api(`/repairs/${id}`, { method: "PUT", body: JSON.stringify({ ...input, previousStatusId, statusNote }) });
   const db = await getDatabase();
   await db.execute(`UPDATE repairs SET
     customer_id=?, status_id=?, device_type=?, brand=?, model=?, serial_number=?, imei=?, reported_fault=?, accessories=?, general_condition=?,

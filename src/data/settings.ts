@@ -1,4 +1,6 @@
 import { getDatabase } from "./database";
+import { api } from "./api";
+import { isServerMode } from "./runtime";
 
 export type OfficeSettings = {
   companyName: string;
@@ -28,6 +30,7 @@ const keys: Record<keyof OfficeSettings, string> = {
 };
 
 export async function getOfficeSettings(): Promise<OfficeSettings> {
+  if (isServerMode) return api("/settings/office");
   const db = await getDatabase();
   const rows = await db.select<{ key: string; value: string }[]>(
     `SELECT key, value FROM app_settings WHERE key IN (${Object.values(keys).map(()=>"?").join(",")})`,
@@ -45,6 +48,7 @@ export async function getOfficeSettings(): Promise<OfficeSettings> {
 }
 
 export async function saveOfficeSettings(settings: OfficeSettings): Promise<void> {
+  if (isServerMode) return api("/settings/office", { method: "PUT", body: JSON.stringify(settings) });
   const db = await getDatabase();
   for (const [field, key] of Object.entries(keys) as [keyof OfficeSettings, string][]) {
     await db.execute(

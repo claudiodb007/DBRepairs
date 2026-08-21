@@ -1,0 +1,97 @@
+name: dbrepairs
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dbrepairs}
+      POSTGRES_USER: ${POSTGRES_USER:-dbrepairs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD in .env or Portainer}
+      TZ: ${TZ:-Europe/Lisbon}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  api:
+    build:
+      context: ./server
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-dbrepairs}
+      PGUSER: ${POSTGRES_USER:-dbrepairs}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
+      TZ: ${TZ:-Europe/Lisbon}
+      TRUST_PROXY: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    networks: [internal]
+
+  web:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "${DBREPAIRS_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [internal]
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-dbrepairs}
+      PGUSER: ${POSTGRES_USER:-dbrepairs}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      TZ: ${TZ:-Europe/Lisbon}
+    volumes:
+      - postgres_backups:/backups
+    depends_on:
+      api:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        while true; do
+          stamp=$$(date +%Y%m%d-%H%M%S)
+          temporary="/backups/DBRepairs-$${stamp}.dump.tmp"
+          destination="/backups/DBRepairs-$${stamp}.dump"
+          if pg_dump --format=custom --no-owner --no-privileges --file="$$temporary"; then
+            mv "$$temporary" "$$destination"
+            find /backups -type f -name 'DBRepairs-*.dump' -mtime "+$${BACKUP_RETENTION_DAYS}" -delete
+          else
+            rm -f "$$temporary"
+          fi
+          sleep "$${BACKUP_INTERVAL_SECONDS}"
+        done
+    networks: [internal]
+
+volumes:
+  postgres_data:
+  postgres_backups:
+
+networks:
+  internal:

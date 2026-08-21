@@ -1,4 +1,6 @@
 import { getDatabase } from "./database";
+import { api } from "./api";
+import { isServerMode } from "./runtime";
 
 export type Customer = {
   id: number;
@@ -29,6 +31,7 @@ function clean(value: string) {
 }
 
 export async function listCustomers(search = ""): Promise<Customer[]> {
+  if (isServerMode) return api(`/customers?search=${encodeURIComponent(search)}`);
   const db = await getDatabase();
   const term = `%${search.trim()}%`;
   return db.select<Customer[]>(
@@ -46,6 +49,10 @@ export async function listCustomers(search = ""): Promise<Customer[]> {
 }
 
 export async function createCustomer(input: CustomerInput): Promise<number> {
+  if (isServerMode) {
+    const result = await api<{ id: number }>("/customers", { method: "POST", body: JSON.stringify(input) });
+    return result.id;
+  }
   const db = await getDatabase();
   const result = await db.execute(
     `INSERT INTO customers (name, company, tax_number, phone, email, address, notes)
@@ -64,6 +71,7 @@ export async function createCustomer(input: CustomerInput): Promise<number> {
 }
 
 export async function updateCustomer(id: number, input: CustomerInput): Promise<void> {
+  if (isServerMode) return api(`/customers/${id}`, { method: "PUT", body: JSON.stringify(input) });
   const db = await getDatabase();
   await db.execute(
     `UPDATE customers
@@ -90,6 +98,7 @@ export async function updateCustomer(id: number, input: CustomerInput): Promise<
 }
 
 export async function deleteCustomer(id: number): Promise<void> {
+  if (isServerMode) return api(`/customers/${id}`, { method: "DELETE" });
   const db = await getDatabase();
   await db.execute("DELETE FROM customers WHERE id = ?1", [id]);
 }

@@ -6,6 +6,8 @@ import { getDatabase } from "../data/database";
 import { listCustomers } from "../data/customers";
 import { listRepairs } from "../data/repairs";
 import { useI18n } from "../i18n/I18nProvider";
+import { downloadApiFile, downloadTextFile } from "../data/api";
+import { isServerMode } from "../data/runtime";
 
 export default function SettingsPage(){
   const {t,locale,setLocale,locales}=useI18n();
@@ -42,6 +44,10 @@ export default function SettingsPage(){
     if(backupRunning) return;
     setBackupRunning(true);setBackupPath("");setError("");
     try{
+      if(isServerMode){
+        setBackupPath(await downloadApiFile("/backups/database"));
+        return;
+      }
       const db=await getDatabase();
       await db.execute("PRAGMA wal_checkpoint(FULL)");
       const path=await invoke<string>("backup_database");
@@ -86,6 +92,7 @@ export default function SettingsPage(){
         c.id,c.name,c.company,c.tax_number,c.phone,c.email,c.address,c.notes,c.created_at,c.updated_at
       ].map(csvCell).join(";"));
       const csv="\ufeff"+header.map(csvCell).join(";")+"\n"+body.join("\n");
+      if(isServerMode){downloadTextFile(csv,"DBRepairs-clientes.csv");setExportPath("DBRepairs-clientes.csv");return;}
       const path=await invoke<string>("export_text_file",{filename:"DBRepairs-clientes.csv",content:csv});
       setExportPath(path);
     }catch(cause){
@@ -108,6 +115,7 @@ export default function SettingsPage(){
         r.internal_notes,r.opened_at,r.closed_at
       ].map(csvCell).join(";"));
       const csv="\ufeff"+header.map(csvCell).join(";")+"\n"+body.join("\n");
+      if(isServerMode){downloadTextFile(csv,"DBRepairs-reparacoes.csv");setExportPath("DBRepairs-reparacoes.csv");return;}
       const path=await invoke<string>("export_text_file",{filename:"DBRepairs-reparacoes.csv",content:csv});
       setExportPath(path);
     }catch(cause){
@@ -135,10 +143,10 @@ export default function SettingsPage(){
             <button type="button" className="secondary" disabled={backupRunning||restoreRunning} onClick={()=>void createBackup()}>
               {backupRunning?t("settings.backupRunning"):t("settings.createBackup")}
             </button>
-            <label className={`secondary file-button ${restoreRunning?"disabled":""}`}>
+            {!isServerMode&&<label className={`secondary file-button ${restoreRunning?"disabled":""}`}>
               {restoreRunning?t("settings.restoreRunning"):t("settings.restoreBackup")}
               <input type="file" accept=".db,application/x-sqlite3,application/vnd.sqlite3" disabled={backupRunning||restoreRunning} onChange={restoreBackup}/>
-            </label>
+            </label>}
           </div>
         </div>
         {backupPath&&<div className="backup-success"><strong>{t("settings.backupCreated")}</strong><code>{backupPath}</code></div>}

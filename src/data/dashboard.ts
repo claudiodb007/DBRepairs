@@ -1,4 +1,6 @@
 import { getDatabase } from "./database";
+import { api } from "./api";
+import { isServerMode } from "./runtime";
 
 export type DashboardStats = {
   openRepairs: number;
@@ -19,6 +21,17 @@ export type DashboardRecentRepair = {
   opened_at: string;
 };
 
+type DashboardData = { stats: DashboardStats; recent: DashboardRecentRepair[] };
+let serverDashboardRequest: Promise<DashboardData> | undefined;
+
+function getServerDashboard() {
+  if (!serverDashboardRequest) {
+    serverDashboardRequest = api<DashboardData>("/dashboard");
+    window.setTimeout(() => { serverDashboardRequest = undefined; }, 0);
+  }
+  return serverDashboardRequest;
+}
+
 type CountRow = { count: number };
 
 async function count(sql: string, params: unknown[] = []): Promise<number> {
@@ -28,6 +41,7 @@ async function count(sql: string, params: unknown[] = []): Promise<number> {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+  if (isServerMode) return (await getServerDashboard()).stats;
   const [openRepairs, waitingCustomer, ready, closedToday] = await Promise.all([
     count(`SELECT COUNT(*) count
       FROM repairs r
@@ -51,6 +65,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 }
 
 export async function listDashboardRecentRepairs(limit = 5): Promise<DashboardRecentRepair[]> {
+  if (isServerMode) return (await getServerDashboard()).recent.slice(0, limit);
   const db = await getDatabase();
   return db.select(`SELECT
       r.id,

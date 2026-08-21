@@ -1,0 +1,14 @@
+{
+  "name": "dbrepairs-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "fastify": "^5.5.0",
+    "pg": "^8.16.3"
+  }
+}
