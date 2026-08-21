@@ -136,5 +136,16 @@
   "settings.restoreInvalid": "Selecciona una copia .db SQLite válida de DBRepairs.",
   "settings.restoreServerConfirm": "¿Restaurar esta copia de PostgreSQL? La base actual se descargará automáticamente antes de ser reemplazada.",
   "settings.restoreServerInvalid": "Selecciona una copia PostgreSQL .dump válida de DBRepairs Server.",
-  "settings.restoreError": "No se pudo restaurar la copia de seguridad."
+  "settings.restoreError": "No se pudo restaurar la copia de seguridad.",
+  "settings.portableTitle": "Copia portátil",
+  "settings.portableHint": "Transfiere todos los datos entre la edición de escritorio SQLite y el servidor PostgreSQL.",
+  "settings.portableCreate": "Crear copia portátil",
+  "settings.portableRestore": "Restaurar copia portátil",
+  "settings.portableExporting": "Creando copia portátil…",
+  "settings.portableRestoring": "Restaurando datos…",
+  "settings.portableCreated": "Copia portátil creada correctamente",
+  "settings.portableConfirm": "¿Restaurar esta copia portátil? Todos los datos actuales serán reemplazados después de crear una copia nativa de seguridad.",
+  "settings.portableInvalid": "Selecciona una copia portátil .dbrepairs válida.",
+  "settings.portableError": "No se pudo crear la copia portátil.",
+  "settings.portableRestoreError": "No se pudo restaurar la copia portátil. Los datos actuales no fueron modificados."
 }

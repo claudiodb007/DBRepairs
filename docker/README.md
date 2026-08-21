@@ -67,6 +67,19 @@ A manual dump can also be downloaded from **Settings → Create backup** in the 
 
 The web interface can restore these `.dump` files with **Settings → Restore backup**. Before replacing the database, the browser automatically downloads a safety backup of the current data. Restore runs in one PostgreSQL transaction: if any step fails, the existing database is left unchanged. Do not close the page while the restore is running.
 
+### Portable SQLite/PostgreSQL backups
+
+Use **Settings → Portable backup** to create a `.dbrepairs` file. Unlike the native `.db` and `.dump` formats, this application-level archive works in both directions:
+
+```text
+Desktop SQLite → Server PostgreSQL
+Server PostgreSQL → Desktop SQLite
+```
+
+It includes company settings and logo, repair statuses, customers, repairs and complete status history. Restoring replaces all current application data after automatically creating a native safety backup. The archive is validated before replacement and imported in one database transaction.
+
+Use native backups for disaster recovery of the same database engine. Use portable backups to move or clone DBRepairs data between desktop and server editions.
+
 List automatic backups:
 
 ```bash

@@ -77,6 +77,7 @@ Live overview with:
 - Transactional HTTP API and automatic schema migrations.
 - Docker Compose stack for a server or Portainer.
 - Manual and scheduled PostgreSQL backups with configurable retention.
+- Portable `.dbrepairs` backups for two-way transfer between SQLite and PostgreSQL.
 
 ## Technology
 
@@ -96,7 +97,7 @@ Live overview with:
 Download the `.deb` package and install it with:
 
 ```bash
-sudo apt install ./DBRepairs_0.1.0_amd64.deb
+sudo apt install ./DBRepairs_0.2.0_amd64.deb
 ```
 
 ### Fedora / RHEL compatible distributions
@@ -104,7 +105,7 @@ sudo apt install ./DBRepairs_0.1.0_amd64.deb
 Download the `.rpm` package and install it with your distribution package manager, for example:
 
 ```bash
-sudo dnf install ./DBRepairs-0.1.0-1.x86_64.rpm
+sudo dnf install ./DBRepairs-0.2.0-1.x86_64.rpm
 ```
 
 ## Development
@@ -140,7 +141,7 @@ The desktop edition uses a local SQLite database. Application data is stored in 
 
 Use the built-in backup function before moving or reinstalling systems.
 
-The server edition stores shared data in its PostgreSQL Docker volume. Desktop and server data are intentionally independent; starting the server does not modify or migrate an existing desktop SQLite database.
+The server edition stores shared data in its PostgreSQL Docker volume. Desktop and server data remain independent until a portable `.dbrepairs` backup is explicitly restored. This format transfers settings, statuses, customers, repairs and status history in either direction between SQLite and PostgreSQL.
 
 ## Translation
 

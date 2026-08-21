@@ -8,6 +8,7 @@ import { listRepairs } from "../data/repairs";
 import { useI18n } from "../i18n/I18nProvider";
 import { downloadApiFile, downloadTextFile, restoreApiBackup } from "../data/api";
 import { isServerMode } from "../data/runtime";
+import { exportPortableBackup, importPortableBackup, parsePortableBackup } from "../data/portable";
 
 export default function SettingsPage(){
   const {t,locale,setLocale,locales}=useI18n();
@@ -18,6 +19,8 @@ export default function SettingsPage(){
   const [backupRunning,setBackupRunning]=useState(false);
   const [backupPath,setBackupPath]=useState("");
   const [restoreRunning,setRestoreRunning]=useState(false);
+  const [portableRunning,setPortableRunning]=useState<"export"|"restore"|"">("");
+  const [portablePath,setPortablePath]=useState("");
   const [exportRunning,setExportRunning]=useState<"customers"|"repairs"|"">("");
   const [exportPath,setExportPath]=useState("");
 
@@ -40,24 +43,49 @@ export default function SettingsPage(){
     finally{setSaving(false);}
   }
 
+  async function createNativeBackup(){
+    if(isServerMode) return downloadApiFile("/backups/database");
+      const db=await getDatabase();
+      await db.execute("PRAGMA wal_checkpoint(FULL)");
+    return invoke<string>("backup_database");
+  }
+
   async function createBackup(){
     if(backupRunning) return;
     setBackupRunning(true);setBackupPath("");setError("");
     try{
-      if(isServerMode){
-        setBackupPath(await downloadApiFile("/backups/database"));
-        return;
-      }
-      const db=await getDatabase();
-      await db.execute("PRAGMA wal_checkpoint(FULL)");
-      const path=await invoke<string>("backup_database");
-      setBackupPath(path);
+      setBackupPath(await createNativeBackup());
     }catch(cause){
       console.error(cause);
       setError(t("settings.backupError"));
     }finally{
       setBackupRunning(false);
     }
+  }
+
+  async function createPortable(){
+    if(portableRunning) return;
+    setPortableRunning("export");setPortablePath("");setError("");
+    try{setPortablePath(await exportPortableBackup());}
+    catch(cause){console.error(cause);setError(t("settings.portableError"));}
+    finally{setPortableRunning("");}
+  }
+
+  async function restorePortable(e:ChangeEvent<HTMLInputElement>){
+    const file=e.target.files?.[0];e.target.value="";
+    if(!file||portableRunning) return;
+    if(!file.name.toLowerCase().endsWith(".dbrepairs")){setError(t("settings.portableInvalid"));return;}
+    let archive;
+    try{archive=parsePortableBackup(await file.text());}
+    catch(cause){console.error(cause);setError(t("settings.portableInvalid"));return;}
+    if(!window.confirm(t("settings.portableConfirm"))) return;
+    setPortableRunning("restore");setError("");setPortablePath("");
+    try{
+      setBackupPath(await createNativeBackup());
+      await importPortableBackup(archive);
+      window.location.reload();
+    }catch(cause){console.error(cause);setError(t("settings.portableRestoreError"));}
+    finally{setPortableRunning("");}
   }
 
   async function restoreBackup(e:ChangeEvent<HTMLInputElement>){
@@ -161,6 +189,21 @@ export default function SettingsPage(){
           </div>
         </div>
         {backupPath&&<div className="backup-success"><strong>{t("settings.backupCreated")}</strong><code>{backupPath}</code></div>}
+      </section>
+      <section className="panel settings-panel portable-panel">
+        <div className="panel-head">
+          <div><h2>{t("settings.portableTitle")}</h2><p>{t("settings.portableHint")}</p></div>
+          <div className="export-actions">
+            <button type="button" className="secondary" disabled={Boolean(portableRunning)||backupRunning||restoreRunning} onClick={()=>void createPortable()}>
+              {portableRunning==="export"?t("settings.portableExporting"):t("settings.portableCreate")}
+            </button>
+            <label className={`secondary file-button ${portableRunning?"disabled":""}`}>
+              {portableRunning==="restore"?t("settings.portableRestoring"):t("settings.portableRestore")}
+              <input type="file" accept=".dbrepairs,application/json" disabled={Boolean(portableRunning)||backupRunning||restoreRunning} onChange={restorePortable}/>
+            </label>
+          </div>
+        </div>
+        {portablePath&&<div className="backup-success"><strong>{t("settings.portableCreated")}</strong><code>{portablePath}</code></div>}
       </section>
       <section className="panel settings-panel">
         <div className="panel-head">

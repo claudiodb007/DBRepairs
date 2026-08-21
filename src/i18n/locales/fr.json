@@ -136,5 +136,16 @@
   "settings.restoreInvalid": "Choisissez une sauvegarde SQLite .db DBRepairs valide.",
   "settings.restoreServerConfirm": "Restaurer cette sauvegarde PostgreSQL ? La base actuelle sera téléchargée automatiquement avant d’être remplacée.",
   "settings.restoreServerInvalid": "Choisissez une sauvegarde PostgreSQL .dump DBRepairs Server valide.",
-  "settings.restoreError": "Impossible de restaurer la sauvegarde."
+  "settings.restoreError": "Impossible de restaurer la sauvegarde.",
+  "settings.portableTitle": "Sauvegarde portable",
+  "settings.portableHint": "Transfère toutes les données entre l’édition de bureau SQLite et le serveur PostgreSQL.",
+  "settings.portableCreate": "Créer une sauvegarde portable",
+  "settings.portableRestore": "Restaurer une sauvegarde portable",
+  "settings.portableExporting": "Création de la sauvegarde portable…",
+  "settings.portableRestoring": "Restauration des données…",
+  "settings.portableCreated": "Sauvegarde portable créée avec succès",
+  "settings.portableConfirm": "Restaurer cette sauvegarde portable ? Toutes les données actuelles seront remplacées après la création d’une sauvegarde native de sécurité.",
+  "settings.portableInvalid": "Choisissez une sauvegarde portable .dbrepairs valide.",
+  "settings.portableError": "Impossible de créer la sauvegarde portable.",
+  "settings.portableRestoreError": "Impossible de restaurer la sauvegarde portable. Les données actuelles n’ont pas été modifiées."
 }

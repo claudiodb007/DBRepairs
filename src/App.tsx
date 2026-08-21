@@ -77,7 +77,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand"><img src="/dbrepairs-icon.png" alt="" /><div>DBRepairs <span>0.1</span></div></div>
+        <div className="brand"><img src="/dbrepairs-icon.png" alt="" /><div>DBRepairs <span>0.2</span></div></div>
         <nav>
           <button className={page === "dashboard" ? "active" : ""} onClick={() => setPage("dashboard")}>{t("nav.dashboard")}</button>
           <button className={page === "repairs" ? "active" : ""} onClick={() => setPage("repairs")}>{t("nav.repairs")}</button>

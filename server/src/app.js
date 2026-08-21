@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { createPostgresBackup, isPostgresBackup, restorePostgresBackup } from "./backup.js";
 import { customerInput, officeSettingsInput, pathId, repairInput, ValidationError } from "./validation.js";
+import { exportPortableBackup, importPortableBackup, PortableBackupError } from "./portable.js";
 
 const repairSelect = `SELECT r.*, c.name customer_name, s.code status_code, s.label_key status_label_key
   FROM repairs r
@@ -34,6 +35,7 @@ export function buildApp({ pool, config, logger = true, migrateDatabase }) {
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof ValidationError) return reply.code(400).send({ error: error.message });
+    if (error instanceof PortableBackupError) return reply.code(400).send({ error: error.message });
     if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
       return reply.code(error.statusCode).send({ error: error.message });
     }
@@ -221,10 +223,31 @@ export function buildApp({ pool, config, logger = true, migrateDatabase }) {
 
   app.put("/api/backups/database", { bodyLimit: 256 * 1024 * 1024 }, async (request, reply) => {
     if (!isPostgresBackup(request.body)) return reply.code(400).send({ error: "Invalid PostgreSQL backup" });
+    if (restoring) return reply.code(409).send({ error: "Another restore is already in progress" });
     restoring = true;
     try {
       await restorePostgresBackup(config.database, request.body);
       if (migrateDatabase) await migrateDatabase();
+      return reply.code(204).send();
+    } finally {
+      restoring = false;
+    }
+  });
+
+  app.get("/api/backups/portable", async (_request, reply) => {
+    const archive = await exportPortableBackup(pool);
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return reply
+      .header("Content-Type", "application/vnd.dbrepairs.backup+json")
+      .header("Content-Disposition", `attachment; filename=DBRepairs-portable-${stamp}.dbrepairs`)
+      .send(JSON.stringify(archive));
+  });
+
+  app.put("/api/backups/portable", { bodyLimit: 256 * 1024 * 1024 }, async (request, reply) => {
+    if (restoring) return reply.code(409).send({ error: "Another restore is already in progress" });
+    restoring = true;
+    try {
+      await importPortableBackup(pool, request.body);
       return reply.code(204).send();
     } finally {
       restoring = false;

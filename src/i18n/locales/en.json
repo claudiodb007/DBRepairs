@@ -136,5 +136,16 @@
   "settings.restoreInvalid": "Choose a valid DBRepairs SQLite .db backup.",
   "settings.restoreServerConfirm": "Restore this PostgreSQL backup? The current database will be downloaded automatically before it is replaced.",
   "settings.restoreServerInvalid": "Choose a valid DBRepairs Server PostgreSQL .dump backup.",
-  "settings.restoreError": "Could not restore the database backup."
+  "settings.restoreError": "Could not restore the database backup.",
+  "settings.portableTitle": "Portable backup",
+  "settings.portableHint": "Transfers all data between the SQLite desktop edition and the PostgreSQL server.",
+  "settings.portableCreate": "Create portable backup",
+  "settings.portableRestore": "Restore portable backup",
+  "settings.portableExporting": "Creating portable backup…",
+  "settings.portableRestoring": "Restoring data…",
+  "settings.portableCreated": "Portable backup created successfully",
+  "settings.portableConfirm": "Restore this portable backup? All current data will be replaced after a native safety backup is created.",
+  "settings.portableInvalid": "Choose a valid .dbrepairs portable backup.",
+  "settings.portableError": "Could not create the portable backup.",
+  "settings.portableRestoreError": "Could not restore the portable backup. Current data was not changed."
 }
