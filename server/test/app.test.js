@@ -27,3 +27,16 @@ test("invalid customer payload returns a client error", async (t) => {
   assert.equal(response.statusCode, 400);
   assert.match(response.json().error, /name is required/);
 });
+
+test("restore rejects files that are not PostgreSQL dumps", async (t) => {
+  const app = testApp();
+  t.after(() => app.close());
+  const response = await app.inject({
+    method: "PUT",
+    url: "/api/backups/database",
+    headers: { "content-type": "application/octet-stream" },
+    payload: Buffer.from("not a database"),
+  });
+  assert.equal(response.statusCode, 400);
+  assert.match(response.json().error, /Invalid PostgreSQL backup/);
+});

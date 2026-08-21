@@ -13,7 +13,7 @@ async function close(signal) {
 }
 
 await migrate(pool);
-const app = buildApp({ pool, config });
+const app = buildApp({ pool, config, migrateDatabase: () => migrate(pool) });
 process.on("SIGTERM", () => void close("SIGTERM"));
 process.on("SIGINT", () => void close("SIGINT"));
 await app.listen({ host: config.host, port: config.port });

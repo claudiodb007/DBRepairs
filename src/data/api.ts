@@ -28,6 +28,15 @@ export async function downloadApiFile(path: string): Promise<string> {
   return filename;
 }
 
+export async function restoreApiBackup(data: ArrayBuffer): Promise<void> {
+  const response = await fetch(`${apiRoot}/backups/database`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/octet-stream" },
+    body: data,
+  });
+  if (!response.ok) throw new Error(await responseError(response));
+}
+
 export function downloadTextFile(content: string, filename: string) {
   downloadBlob(new Blob([content], { type: "text/csv;charset=utf-8" }), filename);
 }

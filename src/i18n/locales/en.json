@@ -134,5 +134,7 @@
   "settings.restoreRunning": "Preparing restore…",
   "settings.restoreConfirm": "Restore this database backup? The current database will be backed up automatically and DBRepairs will restart.",
   "settings.restoreInvalid": "Choose a valid DBRepairs SQLite .db backup.",
+  "settings.restoreServerConfirm": "Restore this PostgreSQL backup? The current database will be downloaded automatically before it is replaced.",
+  "settings.restoreServerInvalid": "Choose a valid DBRepairs Server PostgreSQL .dump backup.",
   "settings.restoreError": "Could not restore the database backup."
 }

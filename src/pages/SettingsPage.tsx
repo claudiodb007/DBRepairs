@@ -6,7 +6,7 @@ import { getDatabase } from "../data/database";
 import { listCustomers } from "../data/customers";
 import { listRepairs } from "../data/repairs";
 import { useI18n } from "../i18n/I18nProvider";
-import { downloadApiFile, downloadTextFile } from "../data/api";
+import { downloadApiFile, downloadTextFile, restoreApiBackup } from "../data/api";
 import { isServerMode } from "../data/runtime";
 
 export default function SettingsPage(){
@@ -64,17 +64,28 @@ export default function SettingsPage(){
     const file=e.target.files?.[0];
     e.target.value="";
     if(!file||restoreRunning) return;
-    if(!file.name.toLowerCase().endsWith(".db")){setError(t("settings.restoreInvalid"));return;}
-    if(!window.confirm(t("settings.restoreConfirm"))) return;
+    const expectedExtension=isServerMode?".dump":".db";
+    if(!file.name.toLowerCase().endsWith(expectedExtension)){setError(t(isServerMode?"settings.restoreServerInvalid":"settings.restoreInvalid"));return;}
+    if(!window.confirm(t(isServerMode?"settings.restoreServerConfirm":"settings.restoreConfirm"))) return;
     setRestoreRunning(true);setError("");
     try{
-      const bytes=new Uint8Array(await file.arrayBuffer());
+      const buffer=await file.arrayBuffer();
+      const bytes=new Uint8Array(buffer);
+      if(isServerMode){
+        const header=new TextDecoder("ascii").decode(bytes.slice(0,5));
+        if(header!=="PGDMP"){setError(t("settings.restoreServerInvalid"));return;}
+        await downloadApiFile("/backups/database");
+        await restoreApiBackup(buffer);
+        window.location.reload();
+        return;
+      }
       const header=new TextDecoder("utf-8").decode(bytes.slice(0,16));
-      if(header!=="SQLite format 3\0"){setError(t("settings.restoreInvalid"));setRestoreRunning(false);return;}
+      if(header!=="SQLite format 3\0"){setError(t("settings.restoreInvalid"));return;}
       const db=await getDatabase();
       await db.execute("PRAGMA wal_checkpoint(FULL)");
       await invoke("restore_database",{data:Array.from(bytes)});
-    }catch(cause){console.error(cause);setError(t("settings.restoreError"));setRestoreRunning(false);}
+    }catch(cause){console.error(cause);setError(t("settings.restoreError"));}
+    finally{setRestoreRunning(false);}
   }
 
   const csvCell=(value:unknown)=>{
@@ -143,10 +154,10 @@ export default function SettingsPage(){
             <button type="button" className="secondary" disabled={backupRunning||restoreRunning} onClick={()=>void createBackup()}>
               {backupRunning?t("settings.backupRunning"):t("settings.createBackup")}
             </button>
-            {!isServerMode&&<label className={`secondary file-button ${restoreRunning?"disabled":""}`}>
+            <label className={`secondary file-button ${restoreRunning?"disabled":""}`}>
               {restoreRunning?t("settings.restoreRunning"):t("settings.restoreBackup")}
-              <input type="file" accept=".db,application/x-sqlite3,application/vnd.sqlite3" disabled={backupRunning||restoreRunning} onChange={restoreBackup}/>
-            </label>}
+              <input type="file" accept={isServerMode?".dump,application/octet-stream":".db,application/x-sqlite3,application/vnd.sqlite3"} disabled={backupRunning||restoreRunning} onChange={restoreBackup}/>
+            </label>
           </div>
         </div>
         {backupPath&&<div className="backup-success"><strong>{t("settings.backupCreated")}</strong><code>{backupPath}</code></div>}

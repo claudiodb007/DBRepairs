@@ -65,6 +65,8 @@ The `backup` service creates a PostgreSQL custom-format dump immediately after t
 
 A manual dump can also be downloaded from **Settings → Create backup** in the web interface. Keep an additional copy outside the Docker host.
 
+The web interface can restore these `.dump` files with **Settings → Restore backup**. Before replacing the database, the browser automatically downloads a safety backup of the current data. Restore runs in one PostgreSQL transaction: if any step fails, the existing database is left unchanged. Do not close the page while the restore is running.
+
 List automatic backups:
 
 ```bash

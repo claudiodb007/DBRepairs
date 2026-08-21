@@ -134,5 +134,7 @@
   "settings.restoreRunning": "A preparar reposição…",
   "settings.restoreConfirm": "Repor esta cópia da base de dados? A base atual será guardada automaticamente e o DBRepairs será reiniciado.",
   "settings.restoreInvalid": "Escolhe uma cópia .db SQLite válida do DBRepairs.",
+  "settings.restoreServerConfirm": "Repor esta cópia PostgreSQL? A base atual será descarregada automaticamente antes da reposição. Os dados atuais serão substituídos.",
+  "settings.restoreServerInvalid": "Escolhe uma cópia PostgreSQL .dump válida do DBRepairs Server.",
   "settings.restoreError": "Não foi possível repor a cópia de segurança."
 }

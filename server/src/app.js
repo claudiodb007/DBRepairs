@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import { createPostgresBackup } from "./backup.js";
+import { createPostgresBackup, isPostgresBackup, restorePostgresBackup } from "./backup.js";
 import { customerInput, officeSettingsInput, pathId, repairInput, ValidationError } from "./validation.js";
 
 const repairSelect = `SELECT r.*, c.name customer_name, s.code status_code, s.label_key status_label_key
@@ -11,8 +11,19 @@ function replyNotFound(reply) {
   return reply.code(404).send({ error: "Not found" });
 }
 
-export function buildApp({ pool, config, logger = true }) {
+export function buildApp({ pool, config, logger = true, migrateDatabase }) {
   const app = Fastify({ logger, trustProxy: config.trustProxy, bodyLimit: 3_200_000 });
+  let restoring = false;
+
+  app.addContentTypeParser("application/octet-stream", { parseAs: "buffer", bodyLimit: 256 * 1024 * 1024 }, (_request, body, done) => {
+    done(null, body);
+  });
+
+  app.addHook("onRequest", async (request, reply) => {
+    if (restoring && request.url !== "/api/health") {
+      return reply.code(503).send({ error: "Database restore in progress" });
+    }
+  });
 
   app.addHook("onSend", async (_request, reply, payload) => {
     reply.header("X-Content-Type-Options", "nosniff");
@@ -32,6 +43,7 @@ export function buildApp({ pool, config, logger = true }) {
   });
 
   app.get("/api/health", async () => {
+    if (restoring) return { status: "restoring" };
     await pool.query("SELECT 1");
     return { status: "ok" };
   });
@@ -205,6 +217,18 @@ export function buildApp({ pool, config, logger = true }) {
       .header("Content-Type", "application/octet-stream")
       .header("Content-Disposition", `attachment; filename=DBRepairs-${stamp}.dump`)
       .send(backup);
+  });
+
+  app.put("/api/backups/database", { bodyLimit: 256 * 1024 * 1024 }, async (request, reply) => {
+    if (!isPostgresBackup(request.body)) return reply.code(400).send({ error: "Invalid PostgreSQL backup" });
+    restoring = true;
+    try {
+      await restorePostgresBackup(config.database, request.body);
+      if (migrateDatabase) await migrateDatabase();
+      return reply.code(204).send();
+    } finally {
+      restoring = false;
+    }
   });
 
   return app;
