@@ -85,32 +85,32 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .print-preview-shell { width: min(940px, 100%); margin: 0 auto; }
 .print-preview-toolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px 14px; background: rgba(255,255,255,.96); border: 1px solid #d1d5db; border-radius: 10px; }
 .print-preview-toolbar > div { display: flex; gap: 8px; }
-.print-a4 { width: 210mm; min-height: 297mm; margin: 0 auto; background: white; color: #111; box-shadow: 0 10px 35px rgba(0,0,0,.16); padding: 8mm 10mm; display: grid; grid-template-rows: 1fr auto 1fr; }
-.repair-slip { min-height: 132mm; display: flex; flex-direction: column; gap: 3.2mm; font-family: Arial, sans-serif; font-size: 9.5pt; }
-.slip-head { display: flex; justify-content: space-between; align-items: start; border-bottom: 1.5px solid #111; padding-bottom: 3mm; }
+.print-a4 { box-sizing: border-box; width: 210mm; height: 297mm; margin: 0 auto; background: white; color: #111; box-shadow: 0 10px 35px rgba(0,0,0,.16); padding: 7mm 9mm; display: grid; grid-template-rows: 137mm 9mm 137mm; overflow: hidden; }
+.repair-slip { box-sizing: border-box; min-height: 0; height: 137mm; overflow: hidden; display: flex; flex-direction: column; gap: 2mm; font-family: Arial, sans-serif; font-size: 8.7pt; overflow-wrap: anywhere; }
+.slip-head { display: flex; justify-content: space-between; align-items: start; border-bottom: 1.5px solid #111; padding-bottom: 2mm; }
 .slip-head > div:first-child { display: grid; gap: 1mm; }
 .slip-brand { font-size: 16pt; }
 .slip-number { text-align: right; display: grid; gap: 1mm; }
 .slip-number span, .slip-grid span, .slip-row > span, .signature-row span { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .04em; color: #555; }
 .slip-number strong { font-size: 12pt; }
 .slip-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #bbb; }
-.slip-grid > div { min-height: 13mm; padding: 2.2mm 3mm; display: grid; gap: 1mm; border-bottom: 1px solid #ddd; }
+.slip-grid > div { box-sizing: border-box; min-height: 10.5mm; padding: 1.5mm 2.5mm; display: grid; gap: .6mm; border-bottom: 1px solid #ddd; }
 .slip-grid > div:nth-child(odd) { border-right: 1px solid #ddd; }
-.slip-row { border: 1px solid #bbb; padding: 2mm 3mm; min-height: 12mm; }
-.slip-row p { margin: 1.2mm 0 0; color: #111; white-space: pre-wrap; }
+.slip-row { box-sizing: border-box; border: 1px solid #bbb; padding: 1.5mm 2.5mm; min-height: 10mm; }
+.slip-row p { margin: .8mm 0 0; color: #111; white-space: pre-wrap; line-height: 1.15; }
 .slip-row.internal { background: #fafafa; }
-.signature-row { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; padding-top: 5mm; }
-.signature-row > div { height: 12mm; border-top: 1px solid #777; padding-top: 1.5mm; text-align: center; }
-.cut-line { height: 9mm; display: flex; align-items: center; justify-content: center; border-top: 1px dashed #888; border-bottom: 1px dashed #888; color: #666; font-size: 8pt; margin: 2mm -3mm; }
+.signature-row { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; padding-top: 3mm; }
+.signature-row > div { height: 9mm; border-top: 1px solid #777; padding-top: 1.2mm; text-align: center; }
+.cut-line { box-sizing: border-box; height: 9mm; display: flex; align-items: center; justify-content: center; border-top: 1px dashed #888; border-bottom: 1px dashed #888; color: #666; font-size: 8pt; margin: 0 -3mm; }
 @media (max-width: 900px) { .print-preview-backdrop { padding: 10px; } .print-a4 { transform-origin: top left; } }
 @media print {
   @page { size: A4 portrait; margin: 0; }
-  body * { visibility: hidden !important; }
-  .print-preview-backdrop, .print-preview-backdrop * { visibility: visible !important; }
-  .print-preview-backdrop { position: absolute; inset: 0; padding: 0; background: white; overflow: visible; }
+  html, body { width: 210mm; height: 297mm; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: white !important; }
+  body > #root { display: none !important; }
+  body > .print-preview-backdrop { display: block !important; position: static; inset: auto; width: 210mm; height: 297mm; margin: 0; padding: 0; background: white; overflow: hidden; }
   .print-preview-toolbar { display: none !important; }
-  .print-preview-shell { width: auto; margin: 0; }
-  .print-a4 { box-shadow: none; margin: 0; width: 210mm; min-height: 297mm; }
+  .print-preview-shell { width: 210mm; height: 297mm; margin: 0; }
+  .print-a4 { box-shadow: none; margin: 0; width: 210mm; height: 297mm; min-height: 0; max-height: 297mm; break-inside: avoid; page-break-inside: avoid; page-break-after: avoid; }
 }
 
 /* Branding + repair form */

@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { createCustomer, listCustomers, Customer, CustomerInput } from "../data/customers";
 import {
   createRepair,
@@ -14,7 +15,7 @@ import {
   updateRepair,
 } from "../data/repairs";
 import { useI18n } from "../i18n/I18nProvider";
-import RepairPrintSheet from "../components/RepairPrintSheet";
+import RepairPrintSheet, { RepairPrintData } from "../components/RepairPrintSheet";
 import { defaultOfficeSettings, getOfficeSettings, OfficeSettings } from "../data/settings";
 
 const blank: RepairInput = {customer_id:0,status_id:0,device_type:"",brand:"",model:"",serial_number:"",imei:"",reported_fault:"",accessories:"",general_condition:"",estimated_value:"",internal_notes:""};
@@ -29,6 +30,7 @@ export default function RepairsPage(){
   const [form,setForm]=useState<RepairInput>(blank); const [office,setOffice]=useState<OfficeSettings>(defaultOfficeSettings);
   const [open,setOpen]=useState(false);
   const [printing,setPrinting]=useState<Repair|null>(null);
+  const [pdfDownloading,setPdfDownloading]=useState(false);
   const [editing,setEditing]=useState<Repair|null>(null);
   const [editForm,setEditForm]=useState<RepairUpdateInput>(blankEdit);
   const [history,setHistory]=useState<RepairStatusHistory[]>([]);
@@ -149,6 +151,22 @@ export default function RepairsPage(){
   const field=(k:keyof RepairInput,v:string|number)=>setForm(f=>({...f,[k]:v}));
   const editField=(k:keyof RepairUpdateInput,v:string|number)=>setEditForm(f=>({...f,[k]:v}));
 
+  function printData(repair:Repair):RepairPrintData {
+    const customer=byId.get(repair.customer_id);
+    return {repairNumber:repair.repair_number,openedAt:new Date(repair.opened_at).toLocaleString(),customerName:repair.customer_name,phone:customer?.phone||undefined,email:customer?.email||undefined,deviceType:repair.device_type||undefined,brand:repair.brand||undefined,model:repair.model||undefined,serialNumber:repair.serial_number||undefined,imei:repair.imei||undefined,reportedFault:repair.reported_fault||undefined,accessories:repair.accessories||undefined,generalCondition:repair.general_condition||undefined,internalNotes:repair.internal_notes||undefined};
+  }
+
+  async function downloadPdf(repair:Repair){
+    if(pdfDownloading) return;
+    setPdfDownloading(true); setError("");
+    try {
+      const {downloadRepairPdf}=await import("../pdf/repairPdf");
+      await downloadRepairPdf(printData(repair),office,t);
+    }
+    catch { setError(t("print.pdfError")); }
+    finally { setPdfDownloading(false); }
+  }
+
   return <>
     <header className="page-header"><div><h1>{t("repairs.title")}</h1><p>{t("repairs.emptyHint")}</p></div><button className="primary" onClick={()=>{setQuickCustomerOpen(false);setQuickCustomer(blankCustomer);setOpen(true);}}>+ {t("repair.new")}</button></header>
     {error&&<div className="alert error">{error}</div>}
@@ -231,6 +249,6 @@ export default function RepairsPage(){
     <datalist id="dbrepairs-brands">{deviceSuggestions.brands.map(value=><option key={value} value={value}/>)}</datalist>
     <datalist id="dbrepairs-models">{deviceSuggestions.models.map(value=><option key={value} value={value}/>)}</datalist>
 
-    {printing&&(()=>{const c=byId.get(printing.customer_id);return <div className="print-preview-backdrop"><div className="print-preview-shell"><div className="print-preview-toolbar"><strong>{t("print.preview")}</strong><div><button className="secondary" onClick={()=>setPrinting(null)}>{t("common.close")}</button><button className="primary" onClick={()=>window.print()}>{t("print.print")}</button></div></div><RepairPrintSheet data={{repairNumber:printing.repair_number,openedAt:new Date(printing.opened_at).toLocaleString(),customerName:printing.customer_name,phone:c?.phone||undefined,email:c?.email||undefined,deviceType:printing.device_type||undefined,brand:printing.brand||undefined,model:printing.model||undefined,serialNumber:printing.serial_number||undefined,imei:printing.imei||undefined,reportedFault:printing.reported_fault||undefined,accessories:printing.accessories||undefined,generalCondition:printing.general_condition||undefined,internalNotes:printing.internal_notes||undefined}} office={office}/></div></div>})()}
+    {printing&&createPortal(<div className="print-preview-backdrop"><div className="print-preview-shell"><div className="print-preview-toolbar"><strong>{t("print.preview")}</strong><div><button className="secondary" onClick={()=>setPrinting(null)}>{t("common.close")}</button><button className="secondary" disabled={pdfDownloading} onClick={()=>void downloadPdf(printing)}>{pdfDownloading?t("print.preparingPdf"):t("print.downloadPdf")}</button><button className="primary" onClick={()=>window.print()}>{t("print.print")}</button></div></div><RepairPrintSheet data={printData(printing)} office={office}/></div></div>,document.body)}
   </>;
 }
