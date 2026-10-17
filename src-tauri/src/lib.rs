@@ -112,7 +112,17 @@ fn export_text_file(app: tauri::AppHandle, filename: String, content: String) ->
 #[serde(rename_all = "camelCase")]
 struct PortableArchive { format: String, version: u32, data: PortableData }
 #[derive(Deserialize)]
-struct PortableData { settings: Vec<PortableSetting>, statuses: Vec<PortableStatus>, customers: Vec<PortableCustomer>, repairs: Vec<PortableRepair>, history: Vec<PortableHistory> }
+struct PortableData {
+    settings: Vec<PortableSetting>,
+    statuses: Vec<PortableStatus>,
+    customers: Vec<PortableCustomer>,
+    repairs: Vec<PortableRepair>,
+    history: Vec<PortableHistory>,
+    #[serde(default, rename = "customerAttachments")]
+    customer_attachments: Vec<PortableCustomerAttachment>,
+    #[serde(default, rename = "repairAttachments")]
+    repair_attachments: Vec<PortableRepairAttachment>,
+}
 #[derive(Deserialize)]
 struct PortableSetting { key: String, value: String }
 #[derive(Deserialize)]
@@ -129,9 +139,34 @@ struct PortableRepair {
 #[derive(Deserialize)]
 struct PortableHistory { id: i64, repair_id: i64, status_id: i64, changed_at: String, note: Option<String> }
 
+#[derive(Deserialize)]
+struct PortableCustomerAttachment {
+    id: i64,
+    customer_id: i64,
+    filename: String,
+    content_type: String,
+    size: i64,
+    data_base64: String,
+    created_at: String,
+}
+
+#[derive(Deserialize)]
+struct PortableRepairAttachment {
+    id: i64,
+    repair_id: i64,
+    filename: String,
+    content_type: String,
+    size: i64,
+    data_base64: String,
+    created_at: String,
+}
+
 #[tauri::command]
 fn restore_portable_database(app: tauri::AppHandle, archive: PortableArchive) -> Result<(), String> {
-    if archive.format != "dbrepairs-portable" || archive.version != 1 || archive.data.statuses.is_empty() {
+    if archive.format != "dbrepairs-portable"
+        || (archive.version != 1 && archive.version != 2)
+        || archive.data.statuses.is_empty()
+    {
         return Err("Unsupported or incomplete DBRepairs portable backup".into());
     }
     let path = app.path().app_config_dir().map_err(|e|e.to_string())?.join("dbrepairs.db");
@@ -143,7 +178,15 @@ fn restore_portable_database(app: tauri::AppHandle, archive: PortableArchive) ->
 fn restore_portable_connection(connection: &mut Connection, archive: PortableArchive) -> Result<(), String> {
     connection.pragma_update(None, "foreign_keys", true).map_err(|e|e.to_string())?;
     let transaction = connection.transaction().map_err(|e|e.to_string())?;
-    transaction.execute_batch("DELETE FROM repair_status_history; DELETE FROM repairs; DELETE FROM customers; DELETE FROM repair_statuses; DELETE FROM app_settings;").map_err(|e|e.to_string())?;
+    transaction.execute_batch(
+        "DELETE FROM repair_attachments;
+         DELETE FROM customer_attachments;
+         DELETE FROM repair_status_history;
+         DELETE FROM repairs;
+         DELETE FROM customers;
+         DELETE FROM repair_statuses;
+         DELETE FROM app_settings;"
+    ).map_err(|e|e.to_string())?;
     for row in archive.data.settings {
         transaction.execute("INSERT INTO app_settings (key,value) VALUES (?1,?2)", params![row.key,row.value]).map_err(|e|e.to_string())?;
     }
@@ -159,8 +202,49 @@ fn restore_portable_connection(connection: &mut Connection, archive: PortableArc
     for row in archive.data.history {
         transaction.execute("INSERT INTO repair_status_history (id,repair_id,status_id,changed_at,note) VALUES (?1,?2,?3,?4,?5)", params![row.id,row.repair_id,row.status_id,row.changed_at,row.note]).map_err(|e|e.to_string())?;
     }
+
+    for row in archive.data.customer_attachments {
+        transaction.execute(
+            "INSERT INTO customer_attachments
+             (id,customer_id,filename,content_type,size,data_base64,created_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![
+                row.id,
+                row.customer_id,
+                row.filename,
+                row.content_type,
+                row.size,
+                row.data_base64,
+                row.created_at
+            ]
+        ).map_err(|e|e.to_string())?;
+    }
+
+    for row in archive.data.repair_attachments {
+        transaction.execute(
+            "INSERT INTO repair_attachments
+             (id,repair_id,filename,content_type,size,data_base64,created_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![
+                row.id,
+                row.repair_id,
+                row.filename,
+                row.content_type,
+                row.size,
+                row.data_base64,
+                row.created_at
+            ]
+        ).map_err(|e|e.to_string())?;
+    }
     transaction.execute("DELETE FROM sqlite_sequence WHERE name IN ('repair_statuses','customers','repairs','repair_status_history')", []).map_err(|e|e.to_string())?;
-    for table in ["repair_statuses","customers","repairs","repair_status_history"] {
+    for table in [
+        "repair_statuses",
+        "customers",
+        "repairs",
+        "repair_status_history",
+        "customer_attachments",
+        "repair_attachments",
+    ] {
         transaction.execute(&format!("INSERT INTO sqlite_sequence (name,seq) SELECT '{table}',COALESCE(MAX(id),0) FROM {table}"), []).map_err(|e|e.to_string())?;
     }
     transaction.commit().map_err(|e|e.to_string())
@@ -174,6 +258,8 @@ mod tests {
     fn portable_restore_is_transactional_and_resets_sequences() {
         let mut connection = Connection::open_in_memory().unwrap();
         connection.execute_batch(include_str!("../migrations/0001_initial.sql")).unwrap();
+        connection.execute_batch(include_str!("../migrations/0002_customer_attachments.sql")).unwrap();
+        connection.execute_batch(include_str!("../migrations/0003_repair_attachments.sql")).unwrap();
         connection.execute("INSERT INTO customers (name) VALUES ('Old data')", []).unwrap();
         let archive = PortableArchive { format:"dbrepairs-portable".into(), version:1, data:PortableData {
             settings:vec![PortableSetting{key:"office.companyName".into(),value:"RepairsLab".into()}],
@@ -181,6 +267,8 @@ mod tests {
             customers:vec![PortableCustomer{id:7,name:"Portable customer".into(),company:None,tax_number:None,phone:None,email:None,address:None,notes:None,created_at:"2026-08-21 12:00:00".into(),updated_at:"2026-08-21 12:00:00".into()}],
             repairs:vec![PortableRepair{id:9,repair_number:"2026-000009".into(),customer_id:7,status_id:4,device_type:Some("Laptop".into()),brand:None,model:None,serial_number:None,imei:None,reported_fault:Some("Test".into()),accessories:None,general_condition:None,diagnosis:None,work_performed:None,estimated_value:None,final_value:None,internal_notes:None,opened_at:"2026-08-21 12:00:00".into(),closed_at:None,created_at:"2026-08-21 12:00:00".into(),updated_at:"2026-08-21 12:00:00".into()}],
             history:vec![PortableHistory{id:11,repair_id:9,status_id:4,changed_at:"2026-08-21 12:00:00".into(),note:None}],
+            customer_attachments:vec![],
+            repair_attachments:vec![],
         }};
         restore_portable_connection(&mut connection, archive).unwrap();
         assert_eq!(connection.query_row("SELECT name FROM customers", [], |row| row.get::<_,String>(0)).unwrap(), "Portable customer");

@@ -199,7 +199,7 @@ export default function SettingsPage(){
             </button>
             <label className={`secondary file-button ${portableRunning?"disabled":""}`}>
               {portableRunning==="restore"?t("settings.portableRestoring"):t("settings.portableRestore")}
-              <input type="file" accept=".dbrepairs,application/json" disabled={Boolean(portableRunning)||backupRunning||restoreRunning} onChange={restorePortable}/>
+              <input type="file" disabled={Boolean(portableRunning)||backupRunning||restoreRunning} onChange={restorePortable}/>
             </label>
           </div>
         </div>

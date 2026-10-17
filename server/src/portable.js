@@ -1,5 +1,5 @@
 const FORMAT = "dbrepairs-portable";
-const VERSION = 1;
+const VERSION = 2;
 
 export class PortableBackupError extends Error {}
 
@@ -52,7 +52,15 @@ function unique(rows, field, name) {
 
 export function validatePortableBackup(value) {
   const archive = record(value, "backup");
-  if (archive.format !== FORMAT || archive.version !== VERSION) throw new PortableBackupError("Unsupported DBRepairs portable backup");
+  if (
+    archive.format !== FORMAT ||
+    (archive.version !== 1 && archive.version !== 2)
+  ) {
+    throw new PortableBackupError(
+      "Unsupported DBRepairs portable backup"
+    );
+  }
+
   const data = record(archive.data, "data");
 
   const settings = array(data.settings, "settings").map((item, index) => {
@@ -103,19 +111,183 @@ export function validatePortableBackup(value) {
     };
   });
 
+  const customerAttachments = array(
+    data.customerAttachments ?? [],
+    "customerAttachments",
+  ).map((item, index) => {
+    const row = record(
+      item,
+      `customerAttachments[${index}]`,
+    );
+
+    return {
+      id: integer(
+        row.id,
+        `customerAttachments[${index}].id`,
+      ),
+      customer_id: integer(
+        row.customer_id,
+        `customerAttachments[${index}].customer_id`,
+      ),
+      filename: text(
+        row.filename,
+        `customerAttachments[${index}].filename`,
+        { max: 255 },
+      ),
+      content_type: text(
+        row.content_type,
+        `customerAttachments[${index}].content_type`,
+        { max: 200 },
+      ),
+      size: integer(
+        row.size,
+        `customerAttachments[${index}].size`,
+      ),
+      data_base64: text(
+        row.data_base64,
+        `customerAttachments[${index}].data_base64`,
+        { max: 20_000_000 },
+      ),
+      created_at: timestamp(
+        row.created_at,
+        `customerAttachments[${index}].created_at`,
+      ),
+    };
+  });
+
+  const repairAttachments = array(
+    data.repairAttachments ?? [],
+    "repairAttachments",
+  ).map((item, index) => {
+    const row = record(
+      item,
+      `repairAttachments[${index}]`,
+    );
+
+    return {
+      id: integer(
+        row.id,
+        `repairAttachments[${index}].id`,
+      ),
+      repair_id: integer(
+        row.repair_id,
+        `repairAttachments[${index}].repair_id`,
+      ),
+      filename: text(
+        row.filename,
+        `repairAttachments[${index}].filename`,
+        { max: 255 },
+      ),
+      content_type: text(
+        row.content_type,
+        `repairAttachments[${index}].content_type`,
+        { max: 200 },
+      ),
+      size: integer(
+        row.size,
+        `repairAttachments[${index}].size`,
+      ),
+      data_base64: text(
+        row.data_base64,
+        `repairAttachments[${index}].data_base64`,
+        { max: 20_000_000 },
+      ),
+      created_at: timestamp(
+        row.created_at,
+        `repairAttachments[${index}].created_at`,
+      ),
+    };
+  });
+
   if (!statuses.length) throw new PortableBackupError("At least one repair status is required");
   unique(settings, "key", "settings"); unique(statuses, "id", "statuses"); unique(statuses, "code", "statuses");
-  unique(customers, "id", "customers"); unique(repairs, "id", "repairs"); unique(repairs, "repair_number", "repairs"); unique(history, "id", "history");
-  const customerIds = new Set(customers.map((row) => row.id));
-  const statusIds = new Set(statuses.map((row) => row.id));
-  const repairIds = new Set(repairs.map((row) => row.id));
-  if (repairs.some((row) => !customerIds.has(row.customer_id) || !statusIds.has(row.status_id))) throw new PortableBackupError("A repair references a missing customer or status");
-  if (history.some((row) => !repairIds.has(row.repair_id) || !statusIds.has(row.status_id))) throw new PortableBackupError("Status history references a missing repair or status");
+  unique(customers, "id", "customers");
+  unique(repairs, "id", "repairs");
+  unique(repairs, "repair_number", "repairs");
+  unique(history, "id", "history");
+  unique(customerAttachments, "id", "customerAttachments");
+  unique(repairAttachments, "id", "repairAttachments");
+
+  const customerIds =
+    new Set(customers.map((row) => row.id));
+
+  const statusIds =
+    new Set(statuses.map((row) => row.id));
+
+  const repairIds =
+    new Set(repairs.map((row) => row.id));
+
+  if (
+    repairs.some(
+      (row) =>
+        !customerIds.has(row.customer_id) ||
+        !statusIds.has(row.status_id),
+    )
+  ) {
+    throw new PortableBackupError(
+      "A repair references a missing customer or status",
+    );
+  }
+
+  if (
+    history.some(
+      (row) =>
+        !repairIds.has(row.repair_id) ||
+        !statusIds.has(row.status_id),
+    )
+  ) {
+    throw new PortableBackupError(
+      "Status history references a missing repair or status",
+    );
+  }
+
+  if (
+    customerAttachments.some(
+      (row) =>
+        !customerIds.has(row.customer_id),
+    )
+  ) {
+    throw new PortableBackupError(
+      "A customer attachment references a missing customer",
+    );
+  }
+
+  if (
+    repairAttachments.some(
+      (row) =>
+        !repairIds.has(row.repair_id),
+    )
+  ) {
+    throw new PortableBackupError(
+      "A repair attachment references a missing repair",
+    );
+  }
 
   return {
-    format: FORMAT, version: VERSION, createdAt: timestamp(archive.createdAt, "createdAt"),
-    sourceEngine: archive.sourceEngine === "sqlite" || archive.sourceEngine === "postgresql" ? archive.sourceEngine : (() => { throw new PortableBackupError("Invalid source engine"); })(),
-    data: { settings, statuses, customers, repairs, history },
+    format: FORMAT,
+    version: VERSION,
+    createdAt: timestamp(
+      archive.createdAt,
+      "createdAt",
+    ),
+    sourceEngine:
+      archive.sourceEngine === "sqlite" ||
+      archive.sourceEngine === "postgresql"
+        ? archive.sourceEngine
+        : (() => {
+            throw new PortableBackupError(
+              "Invalid source engine",
+            );
+          })(),
+    data: {
+      settings,
+      statuses,
+      customers,
+      repairs,
+      history,
+      customerAttachments,
+      repairAttachments,
+    },
   };
 }
 
@@ -123,16 +295,64 @@ export async function exportPortableBackup(pool) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
-    const [settings, statuses, customers, repairs, history] = await Promise.all([
-      client.query("SELECT key,value FROM app_settings ORDER BY key"),
-      client.query("SELECT id,code,label_key,sort_order,active FROM repair_statuses ORDER BY id"),
-      client.query("SELECT id,name,company,tax_number,phone,email,address,notes,created_at,updated_at FROM customers ORDER BY id"),
-      client.query("SELECT id,repair_number,customer_id,status_id,device_type,brand,model,serial_number,imei,reported_fault,accessories,general_condition,diagnosis,work_performed,estimated_value,final_value,internal_notes,opened_at,closed_at,created_at,updated_at FROM repairs ORDER BY id"),
-      client.query("SELECT id,repair_id,status_id,changed_at,note FROM repair_status_history ORDER BY id"),
+    const [
+      settings,
+      statuses,
+      customers,
+      repairs,
+      history,
+      customerAttachments,
+      repairAttachments,
+    ] = await Promise.all([
+      client.query(
+        "SELECT key,value FROM app_settings ORDER BY key"
+      ),
+      client.query(
+        "SELECT id,code,label_key,sort_order,active FROM repair_statuses ORDER BY id"
+      ),
+      client.query(
+        "SELECT id,name,company,tax_number,phone,email,address,notes,created_at,updated_at FROM customers ORDER BY id"
+      ),
+      client.query(
+        "SELECT id,repair_number,customer_id,status_id,device_type,brand,model,serial_number,imei,reported_fault,accessories,general_condition,diagnosis,work_performed,estimated_value,final_value,internal_notes,opened_at,closed_at,created_at,updated_at FROM repairs ORDER BY id"
+      ),
+      client.query(
+        "SELECT id,repair_id,status_id,changed_at,note FROM repair_status_history ORDER BY id"
+      ),
+      client.query(
+        `SELECT
+           id,
+           customer_id,
+           filename,
+           content_type,
+           size,
+           encode(data,'base64') AS data_base64,
+           created_at
+         FROM customer_attachments
+         ORDER BY id`
+      ),
+      client.query(
+        `SELECT
+           id,
+           repair_id,
+           filename,
+           content_type,
+           size,
+           encode(data,'base64') AS data_base64,
+           created_at
+         FROM repair_attachments
+         ORDER BY id`
+      ),
     ]);
     await client.query("COMMIT");
     return { format: FORMAT, version: VERSION, createdAt: new Date().toISOString(), sourceEngine: "postgresql", data: {
-      settings: settings.rows, statuses: statuses.rows, customers: customers.rows, repairs: repairs.rows, history: history.rows,
+      settings: settings.rows,
+      statuses: statuses.rows,
+      customers: customers.rows,
+      repairs: repairs.rows,
+      history: history.rows,
+      customerAttachments: customerAttachments.rows,
+      repairAttachments: repairAttachments.rows,
     } };
   } catch (error) {
     await client.query("ROLLBACK");
@@ -148,13 +368,88 @@ export async function importPortableBackup(pool, value) {
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(87234022)");
-    await client.query("DELETE FROM repair_status_history; DELETE FROM repairs; DELETE FROM customers; DELETE FROM repair_statuses; DELETE FROM app_settings");
+    await client.query(`
+      DELETE FROM repair_attachments;
+      DELETE FROM customer_attachments;
+      DELETE FROM repair_status_history;
+      DELETE FROM repairs;
+      DELETE FROM customers;
+      DELETE FROM repair_statuses;
+      DELETE FROM app_settings
+    `);
     for (const row of archive.data.settings) await client.query("INSERT INTO app_settings (key,value) VALUES ($1,$2)", [row.key,row.value]);
     for (const row of archive.data.statuses) await client.query("INSERT INTO repair_statuses (id,code,label_key,sort_order,active) VALUES ($1,$2,$3,$4,$5)", [row.id,row.code,row.label_key,row.sort_order,row.active]);
     for (const row of archive.data.customers) await client.query("INSERT INTO customers (id,name,company,tax_number,phone,email,address,notes,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", Object.values(row));
     for (const row of archive.data.repairs) await client.query(`INSERT INTO repairs (id,repair_number,customer_id,status_id,device_type,brand,model,serial_number,imei,reported_fault,accessories,general_condition,diagnosis,work_performed,estimated_value,final_value,internal_notes,opened_at,closed_at,created_at,updated_at) VALUES (${Array.from({length:21},(_,i)=>`$${i+1}`).join(",")})`, Object.values(row));
     for (const row of archive.data.history) await client.query("INSERT INTO repair_status_history (id,repair_id,status_id,changed_at,note) VALUES ($1,$2,$3,$4,$5)", Object.values(row));
-    for (const table of ["repair_statuses","customers","repairs","repair_status_history"]) {
+
+    for (
+      const row of archive.data.customerAttachments
+    ) {
+      await client.query(
+        `INSERT INTO customer_attachments
+           (
+             id,
+             customer_id,
+             filename,
+             content_type,
+             size,
+             data,
+             created_at
+           )
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [
+          row.id,
+          row.customer_id,
+          row.filename,
+          row.content_type,
+          row.size,
+          Buffer.from(
+            row.data_base64,
+            "base64",
+          ),
+          row.created_at,
+        ],
+      );
+    }
+
+    for (
+      const row of archive.data.repairAttachments
+    ) {
+      await client.query(
+        `INSERT INTO repair_attachments
+           (
+             id,
+             repair_id,
+             filename,
+             content_type,
+             size,
+             data,
+             created_at
+           )
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [
+          row.id,
+          row.repair_id,
+          row.filename,
+          row.content_type,
+          row.size,
+          Buffer.from(
+            row.data_base64,
+            "base64",
+          ),
+          row.created_at,
+        ],
+      );
+    }
+    for (const table of [
+      "repair_statuses",
+      "customers",
+      "repairs",
+      "repair_status_history",
+      "customer_attachments",
+      "repair_attachments",
+    ]) {
       await client.query(`SELECT setval(pg_get_serial_sequence('${table}','id'), COALESCE(MAX(id),1), MAX(id) IS NOT NULL) FROM ${table}`);
     }
     await client.query("COMMIT");
