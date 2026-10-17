@@ -115,7 +115,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 
 /* Branding + repair form */
 .brand { display:flex; align-items:center; gap:10px; }
-.brand img { width:42px; height:42px; border-radius:10px; object-fit:cover; }
+.brand img { width:42px; height:42px; border-radius:12px; object-fit:cover; }
 .brand > div { display:flex; align-items:baseline; gap:6px; }
 .repair-modal { width:min(760px,100%); }
 .slip-brand-wrap { display:flex !important; grid-template-columns:none !important; flex-direction:row; align-items:center; gap:2.5mm !important; }
@@ -148,7 +148,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .office-settings-grid { display:grid; grid-template-columns:240px 1fr; gap:28px; align-items:start; margin-top:18px; }
 .logo-setting { display:grid; gap:12px; }
 .logo-preview { height:150px; border:1px dashed #cbd5e1; border-radius:12px; background:#f8fafc; display:grid; place-items:center; padding:16px; overflow:hidden; }
-.logo-preview img { max-width:100%; max-height:100%; object-fit:contain; }
+.logo-preview img { max-width:100%; max-height:100%; object-fit:contain; border-radius:18px; }
 .logo-actions { display:grid; gap:8px; justify-items:start; }
 .logo-actions small { color:#6b7280; }
 .file-button { display:inline-block; cursor:pointer; }
