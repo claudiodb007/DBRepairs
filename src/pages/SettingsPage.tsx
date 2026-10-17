@@ -223,7 +223,7 @@ export default function SettingsPage(){
         <div className="panel-head"><div><h2>{t("settings.office")}</h2><p>{t("settings.officeHint")}</p></div></div>
         <div className="office-settings-grid">
           <div className="logo-setting">
-            <div className="logo-preview">{form.logoDataUrl?<img src={form.logoDataUrl} alt=""/>:<img src="/dbrepairs-icon.png" alt=""/>}</div>
+            <div className="logo-preview">{form.logoDataUrl?<img src={form.logoDataUrl} alt=""/>:<img src="/dbrepairs-icon-v2.png" alt=""/>}</div>
             <div className="logo-actions"><label className="secondary file-button">{t("settings.chooseLogo")}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={chooseLogo}/></label>{form.logoDataUrl&&<button type="button" className="danger-link" onClick={()=>set("logoDataUrl","")}>{t("settings.removeLogo")}</button>}<small>{t("settings.logoHint")}</small></div>
           </div>
           <div className="form-grid">

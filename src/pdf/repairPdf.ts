@@ -19,7 +19,7 @@ function imageFormat(dataUrl:string){
 
 async function defaultLogoDataUrl(){
   try {
-    const response=await fetch("/dbrepairs-icon.png");
+    const response=await fetch("/dbrepairs-icon-v2.png");
     if(!response.ok) return undefined;
     const blob=await response.blob();
     return await new Promise<string>((resolve,reject)=>{
