@@ -88,6 +88,180 @@ export function buildApp({ pool, config, logger = true, migrateDatabase }) {
     return reply.code(204).send();
   });
 
+
+  app.get("/api/customers/:id/attachments", async (request) => {
+    const customerId = pathId(request.params.id);
+
+    return (
+      await pool.query(
+        `SELECT
+           id,
+           customer_id,
+           filename,
+           content_type,
+           size,
+           created_at
+         FROM customer_attachments
+         WHERE customer_id=$1
+         ORDER BY id DESC`,
+        [customerId],
+      )
+    ).rows;
+  });
+
+  app.post(
+    "/api/customers/:id/attachments",
+    { bodyLimit: 11 * 1024 * 1024 },
+    async (request, reply) => {
+      const customerId = pathId(request.params.id);
+      const data = request.body;
+
+      if (
+        !Buffer.isBuffer(data) ||
+        data.length === 0 ||
+        data.length > 10 * 1024 * 1024
+      ) {
+        return reply
+          .code(400)
+          .send({ error: "Attachment must be between 1 byte and 10 MB" });
+      }
+
+      let filename = request.headers["x-dbrepairs-filename"];
+
+      if (Array.isArray(filename)) {
+        filename = filename[0];
+      }
+
+      try {
+        filename = decodeURIComponent(String(filename || ""));
+      } catch {
+        filename = "";
+      }
+
+      filename = String(filename)
+        .replace(/[\r\n]/g, "")
+        .trim()
+        .slice(0, 255);
+
+      const extension =
+        filename.split(".").pop()?.toLowerCase() || "";
+
+      if (
+        !filename ||
+        !["pdf", "jpg", "jpeg", "png", "doc", "docx"].includes(extension)
+      ) {
+        return reply
+          .code(400)
+          .send({ error: "Unsupported attachment type" });
+      }
+
+      const contentType = String(
+        request.headers["x-dbrepairs-content-type"] ||
+        "application/octet-stream",
+      ).slice(0, 200);
+
+      const customer = await pool.query(
+        "SELECT 1 FROM customers WHERE id=$1",
+        [customerId],
+      );
+
+      if (!customer.rowCount) {
+        return replyNotFound(reply);
+      }
+
+      const result = await pool.query(
+        `INSERT INTO customer_attachments
+           (customer_id, filename, content_type, size, data)
+         VALUES ($1,$2,$3,$4,$5)
+         RETURNING id`,
+        [
+          customerId,
+          filename,
+          contentType,
+          data.length,
+          data,
+        ],
+      );
+
+      return reply
+        .code(201)
+        .send({ id: result.rows[0].id });
+    },
+  );
+
+  app.get(
+    "/api/customers/:id/attachments/:attachmentId",
+    async (request, reply) => {
+      const customerId = pathId(request.params.id);
+      const attachmentId = pathId(
+        request.params.attachmentId,
+        "attachmentId",
+      );
+
+      const result = await pool.query(
+        `SELECT
+           filename,
+           content_type,
+           data
+         FROM customer_attachments
+         WHERE id=$1
+           AND customer_id=$2
+         LIMIT 1`,
+        [
+          attachmentId,
+          customerId,
+        ],
+      );
+
+      if (!result.rowCount) {
+        return replyNotFound(reply);
+      }
+
+      const row = result.rows[0];
+
+      const safeName = String(row.filename)
+        .replace(/["\r\n]/g, "_");
+
+      return reply
+        .header(
+          "Content-Type",
+          row.content_type || "application/octet-stream",
+        )
+        .header(
+          "Content-Disposition",
+          `attachment; filename="${safeName}"`,
+        )
+        .send(row.data);
+    },
+  );
+
+  app.delete(
+    "/api/customers/:id/attachments/:attachmentId",
+    async (request, reply) => {
+      const customerId = pathId(request.params.id);
+      const attachmentId = pathId(
+        request.params.attachmentId,
+        "attachmentId",
+      );
+
+      const result = await pool.query(
+        `DELETE FROM customer_attachments
+         WHERE id=$1
+           AND customer_id=$2`,
+        [
+          attachmentId,
+          customerId,
+        ],
+      );
+
+      if (!result.rowCount) {
+        return replyNotFound(reply);
+      }
+
+      return reply.code(204).send();
+    },
+  );
+
   app.get("/api/statuses", async () =>
     (await pool.query("SELECT id, code, label_key, sort_order FROM repair_statuses WHERE active=true ORDER BY sort_order")).rows);
 
@@ -109,6 +283,229 @@ export function buildApp({ pool, config, logger = true, migrateDatabase }) {
     (await pool.query(`SELECT h.id, h.status_id, s.code status_code, s.label_key status_label_key, h.changed_at, h.note
       FROM repair_status_history h JOIN repair_statuses s ON s.id=h.status_id
       WHERE h.repair_id=$1 ORDER BY h.id DESC`, [pathId(request.params.id)])).rows);
+
+
+  app.get(
+    "/api/repairs/:id/attachments",
+    async (request) => {
+      const repairId =
+        pathId(request.params.id);
+
+      return (
+        await pool.query(
+          `SELECT
+             id,
+             repair_id,
+             filename,
+             content_type,
+             size,
+             created_at
+           FROM repair_attachments
+           WHERE repair_id=$1
+           ORDER BY id DESC`,
+          [repairId],
+        )
+      ).rows;
+    },
+  );
+
+  app.post(
+    "/api/repairs/:id/attachments",
+    { bodyLimit: 11 * 1024 * 1024 },
+    async (request, reply) => {
+      const repairId =
+        pathId(request.params.id);
+
+      const data = request.body;
+
+      if (
+        !Buffer.isBuffer(data) ||
+        data.length === 0 ||
+        data.length > 10 * 1024 * 1024
+      ) {
+        return reply
+          .code(400)
+          .send({
+            error:
+              "Attachment must be between 1 byte and 10 MB",
+          });
+      }
+
+      let filename =
+        request.headers["x-dbrepairs-filename"];
+
+      if (Array.isArray(filename)) {
+        filename = filename[0];
+      }
+
+      try {
+        filename = decodeURIComponent(
+          String(filename || ""),
+        );
+      } catch {
+        filename = "";
+      }
+
+      filename = String(filename)
+        .replace(/[\r\n]/g, "")
+        .trim()
+        .slice(0, 255);
+
+      const extension =
+        filename
+          .split(".")
+          .pop()
+          ?.toLowerCase() || "";
+
+      if (
+        !filename ||
+        ![
+          "pdf",
+          "jpg",
+          "jpeg",
+          "png",
+          "doc",
+          "docx",
+        ].includes(extension)
+      ) {
+        return reply
+          .code(400)
+          .send({
+            error:
+              "Unsupported attachment type",
+          });
+      }
+
+      const contentType = String(
+        request.headers[
+          "x-dbrepairs-content-type"
+        ] ||
+        "application/octet-stream",
+      ).slice(0, 200);
+
+      const repair =
+        await pool.query(
+          "SELECT 1 FROM repairs WHERE id=$1",
+          [repairId],
+        );
+
+      if (!repair.rowCount) {
+        return replyNotFound(reply);
+      }
+
+      const result =
+        await pool.query(
+          `INSERT INTO repair_attachments
+             (
+               repair_id,
+               filename,
+               content_type,
+               size,
+               data
+             )
+           VALUES ($1,$2,$3,$4,$5)
+           RETURNING id`,
+          [
+            repairId,
+            filename,
+            contentType,
+            data.length,
+            data,
+          ],
+        );
+
+      return reply
+        .code(201)
+        .send({
+          id: result.rows[0].id,
+        });
+    },
+  );
+
+  app.get(
+    "/api/repairs/:id/attachments/:attachmentId",
+    async (request, reply) => {
+      const repairId =
+        pathId(request.params.id);
+
+      const attachmentId =
+        pathId(
+          request.params.attachmentId,
+          "attachmentId",
+        );
+
+      const result =
+        await pool.query(
+          `SELECT
+             filename,
+             content_type,
+             data
+           FROM repair_attachments
+           WHERE id=$1
+             AND repair_id=$2
+           LIMIT 1`,
+          [
+            attachmentId,
+            repairId,
+          ],
+        );
+
+      if (!result.rowCount) {
+        return replyNotFound(reply);
+      }
+
+      const row = result.rows[0];
+
+      const safeName =
+        String(row.filename)
+          .replace(/["\r\n]/g, "_");
+
+      return reply
+        .header(
+          "Content-Type",
+          row.content_type ||
+            "application/octet-stream",
+        )
+        .header(
+          "Content-Disposition",
+          `attachment; filename="${safeName}"`,
+        )
+        .send(row.data);
+    },
+  );
+
+  app.delete(
+    "/api/repairs/:id/attachments/:attachmentId",
+    async (request, reply) => {
+      const repairId =
+        pathId(request.params.id);
+
+      const attachmentId =
+        pathId(
+          request.params.attachmentId,
+          "attachmentId",
+        );
+
+      const result =
+        await pool.query(
+          `DELETE FROM repair_attachments
+           WHERE id=$1
+             AND repair_id=$2`,
+          [
+            attachmentId,
+            repairId,
+          ],
+        );
+
+      if (!result.rowCount) {
+        return replyNotFound(reply);
+      }
+
+      return reply
+        .code(204)
+        .send();
+    },
+  );
 
   app.post("/api/repairs", async (request, reply) => {
     const input = repairInput(request.body);

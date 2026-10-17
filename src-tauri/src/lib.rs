@@ -65,6 +65,35 @@ fn restore_database(app: tauri::AppHandle, data: Vec<u8>) -> Result<(), String> 
 }
 
 #[tauri::command]
+fn export_binary_file(
+    app: tauri::AppHandle,
+    filename: String,
+    data: Vec<u8>,
+) -> Result<String, String> {
+    if filename.trim().is_empty()
+        || filename.contains('/')
+        || filename.contains('\\')
+    {
+        return Err("Invalid filename".into());
+    }
+
+    let downloads = app
+        .path()
+        .download_dir()
+        .map_err(|e| e.to_string())?;
+
+    fs::create_dir_all(&downloads)
+        .map_err(|e| e.to_string())?;
+
+    let destination = downloads.join(filename);
+
+    fs::write(&destination, data)
+        .map_err(|e| e.to_string())?;
+
+    Ok(destination.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
 fn export_text_file(app: tauri::AppHandle, filename: String, content: String) -> Result<String, String> {
     if filename.trim().is_empty() || filename.contains('/') || filename.contains('\\') {
         return Err("Invalid filename".into());
@@ -162,12 +191,26 @@ mod tests {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let migrations = vec![Migration {
-        version: 1,
-        description: "initial_schema",
-        sql: include_str!("../migrations/0001_initial.sql"),
-        kind: MigrationKind::Up,
-    }];
+    let migrations = vec![
+        Migration {
+            version: 1,
+            description: "initial_schema",
+            sql: include_str!("../migrations/0001_initial.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "customer_attachments",
+            sql: include_str!("../migrations/0002_customer_attachments.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 3,
+            description: "repair_attachments",
+            sql: include_str!("../migrations/0003_repair_attachments.sql"),
+            kind: MigrationKind::Up,
+        },
+    ];
 
     tauri::Builder::default()
         .plugin(
@@ -175,7 +218,13 @@ pub fn run() {
                 .add_migrations("sqlite:dbrepairs.db", migrations)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![backup_database, restore_database, export_text_file, restore_portable_database])
+        .invoke_handler(tauri::generate_handler![
+            backup_database,
+            restore_database,
+            export_text_file,
+            export_binary_file,
+            restore_portable_database
+        ])
         .setup(|app| {
             apply_pending_restore(app.handle()).map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
             Ok(())

@@ -215,3 +215,75 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 /* CSV export */
 .export-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 @media (max-width:700px) { .export-actions { width:100%; } .export-actions button { flex:1 1 100%; } }
+
+/* Customer attachments */
+.customer-attachments-section {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.attachment-list {
+  display: grid;
+  gap: 8px;
+}
+
+.attachment-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  background: #fafafa;
+}
+
+.attachment-info {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.attachment-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-info span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.disabled-file-button {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .attachment-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .attachment-item .row-actions {
+    align-items: stretch;
+  }
+
+  .attachment-item .row-actions button {
+    flex: 1;
+  }
+}
+
+/* Repair attachments */
+.repair-attachments-section {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.repair-attachments-section h3 {
+  margin: 0 0 4px;
+}

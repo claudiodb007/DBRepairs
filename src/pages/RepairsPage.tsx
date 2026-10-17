@@ -17,6 +17,14 @@ import {
 import { useI18n } from "../i18n/I18nProvider";
 import RepairPrintSheet, { RepairPrintData } from "../components/RepairPrintSheet";
 import { defaultOfficeSettings, getOfficeSettings, OfficeSettings } from "../data/settings";
+import {
+  addRepairAttachment,
+  deleteRepairAttachment,
+  downloadRepairAttachment,
+  listRepairAttachments,
+  RepairAttachment,
+  validateRepairAttachment,
+} from "../data/repairAttachments";
 
 const blank: RepairInput = {customer_id:0,status_id:0,device_type:"",brand:"",model:"",serial_number:"",imei:"",reported_fault:"",accessories:"",general_condition:"",estimated_value:"",internal_notes:""};
 const blankEdit: RepairUpdateInput = {...blank,diagnosis:"",work_performed:"",final_value:""};
@@ -43,6 +51,9 @@ export default function RepairsPage(){
   const [quickCustomerOpen,setQuickCustomerOpen]=useState(false);
   const [quickCustomer,setQuickCustomer]=useState<CustomerInput>(blankCustomer);
   const [quickCustomerSaving,setQuickCustomerSaving]=useState(false);
+  const [repairAttachments,setRepairAttachments]=useState<RepairAttachment[]>([]);
+  const [repairAttachmentsLoading,setRepairAttachmentsLoading]=useState(false);
+  const [repairAttachmentBusy,setRepairAttachmentBusy]=useState(false);
 
   async function load(){
     try {
@@ -119,11 +130,21 @@ export default function RepairsPage(){
 
   async function openRepair(id:number){
     setError("");
+    setRepairAttachments([]);
+    setRepairAttachmentsLoading(true);
+
     try {
-      const [repair,statusHistory]=await Promise.all([getRepair(id),listRepairStatusHistory(id)]);
+      const [repair,statusHistory,attachments]=await Promise.all([
+        getRepair(id),
+        listRepairStatusHistory(id),
+        listRepairAttachments(id),
+      ]);
+
       if(!repair) return;
+
       setEditing(repair);
       setHistory(statusHistory);
+      setRepairAttachments(attachments);
       setEditForm({
         customer_id:repair.customer_id,status_id:repair.status_id,device_type:repair.device_type||"",brand:repair.brand||"",model:repair.model||"",
         serial_number:repair.serial_number||"",imei:repair.imei||"",reported_fault:repair.reported_fault||"",accessories:repair.accessories||"",
@@ -131,7 +152,11 @@ export default function RepairsPage(){
         diagnosis:repair.diagnosis||"",work_performed:repair.work_performed||"",final_value:repair.final_value?.toString()||""
       });
       setStatusNote("");
-    } catch { setError(t("common.databaseError")); }
+    } catch {
+      setError(t("common.databaseError"));
+    } finally {
+      setRepairAttachmentsLoading(false);
+    }
   }
 
   async function saveEdit(e:FormEvent){
@@ -150,6 +175,137 @@ export default function RepairsPage(){
 
   const field=(k:keyof RepairInput,v:string|number)=>setForm(f=>({...f,[k]:v}));
   const editField=(k:keyof RepairUpdateInput,v:string|number)=>setEditForm(f=>({...f,[k]:v}));
+
+  async function uploadRepairAttachment(
+    file: File | undefined,
+  ) {
+    if (!editing || !file) return;
+
+    setError("");
+
+    try {
+      validateRepairAttachment(file);
+      setRepairAttachmentBusy(true);
+
+      await addRepairAttachment(
+        editing.id,
+        file,
+      );
+
+      setRepairAttachments(
+        await listRepairAttachments(
+          editing.id,
+        ),
+      );
+    } catch (cause) {
+      console.error(cause);
+
+      const reason =
+        cause instanceof Error
+          ? cause.message
+          : "";
+
+      if (reason === "unsupported-type") {
+        setError(
+          t("attachments.invalidType"),
+        );
+      } else if (
+        reason === "file-too-large"
+      ) {
+        setError(
+          t("attachments.tooLarge"),
+        );
+      } else {
+        setError(
+          t("attachments.uploadError"),
+        );
+      }
+    } finally {
+      setRepairAttachmentBusy(false);
+    }
+  }
+
+  async function downloadRepairFile(
+    attachment: RepairAttachment,
+  ) {
+    setError("");
+
+    try {
+      setRepairAttachmentBusy(true);
+
+      await downloadRepairAttachment(
+        attachment,
+      );
+    } catch (cause) {
+      console.error(cause);
+
+      setError(
+        t("attachments.downloadError"),
+      );
+    } finally {
+      setRepairAttachmentBusy(false);
+    }
+  }
+
+  async function removeRepairAttachment(
+    attachment: RepairAttachment,
+  ) {
+    if (
+      !window.confirm(
+        t("attachments.deleteConfirm")
+          .replace(
+            "{name}",
+            attachment.filename,
+          ),
+      )
+    ) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      setRepairAttachmentBusy(true);
+
+      await deleteRepairAttachment(
+        attachment,
+      );
+
+      if (editing) {
+        setRepairAttachments(
+          await listRepairAttachments(
+            editing.id,
+          ),
+        );
+      }
+    } catch (cause) {
+      console.error(cause);
+
+      setError(
+        t("attachments.deleteError"),
+      );
+    } finally {
+      setRepairAttachmentBusy(false);
+    }
+  }
+
+  function formatAttachmentBytes(
+    size: number,
+  ) {
+    if (size < 1024) {
+      return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+      return `${(size / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(
+      size /
+      1024 /
+      1024
+    ).toFixed(1)} MB`;
+  }
 
   function printData(repair:Repair):RepairPrintData {
     const customer=byId.get(repair.customer_id);
@@ -242,6 +398,119 @@ export default function RepairsPage(){
       <label className="field full"><span>{t("repair.generalCondition")}</span><textarea rows={2} value={editForm.general_condition} onChange={e=>editField("general_condition",e.target.value)}/></label>
       <label className="field"><span>{t("repair.finalValue")}</span><input type="number" step="0.01" min="0" value={editForm.final_value} onChange={e=>editField("final_value",e.target.value)}/></label><div></div>
       <label className="field full"><span>{t("repair.internalNotes")}</span><textarea rows={3} value={editForm.internal_notes} onChange={e=>editField("internal_notes",e.target.value)}/></label>
+
+      <section className="repair-attachments-section full">
+        <div className="customer-repairs-head">
+          <div>
+            <h3>{t("attachments.title")}</h3>
+            <p>{t("attachments.repairHint")}</p>
+          </div>
+
+          <label
+            className={`secondary small file-button ${
+              repairAttachmentBusy
+                ? "disabled-file-button"
+                : ""
+            }`}
+          >
+            {repairAttachmentBusy
+              ? t("attachments.working")
+              : `+ ${t("attachments.add")}`}
+
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              disabled={repairAttachmentBusy}
+              onChange={(event) => {
+                const file =
+                  event.currentTarget.files?.[0];
+
+                event.currentTarget.value = "";
+
+                void uploadRepairAttachment(
+                  file,
+                );
+              }}
+            />
+          </label>
+        </div>
+
+        {repairAttachmentsLoading ? (
+          <div className="customer-repairs-empty">
+            {t("common.loading")}
+          </div>
+        ) : repairAttachments.length === 0 ? (
+          <div className="customer-repairs-empty">
+            {t("attachments.repairEmpty")}
+          </div>
+        ) : (
+          <div className="attachment-list">
+            {repairAttachments.map(
+              (attachment) => (
+                <div
+                  className="attachment-item"
+                  key={attachment.id}
+                >
+                  <div className="attachment-info">
+                    <strong
+                      title={
+                        attachment.filename
+                      }
+                    >
+                      {attachment.filename}
+                    </strong>
+
+                    <span>
+                      {formatAttachmentBytes(
+                        attachment.size,
+                      )}
+                      {" · "}
+                      {new Date(
+                        attachment.created_at,
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="row-actions">
+                    <button
+                      type="button"
+                      className="secondary small"
+                      disabled={
+                        repairAttachmentBusy
+                      }
+                      onClick={() =>
+                        void downloadRepairFile(
+                          attachment,
+                        )
+                      }
+                    >
+                      {t(
+                        "attachments.download",
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="danger-link small"
+                      disabled={
+                        repairAttachmentBusy
+                      }
+                      onClick={() =>
+                        void removeRepairAttachment(
+                          attachment,
+                        )
+                      }
+                    >
+                      {t("common.delete")}
+                    </button>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        )}
+      </section>
+
       </div><aside className="history-panel"><h3>{t("repair.history")}</h3>{history.length===0?<p className="muted">{t("repair.historyEmpty")}</p>:<div className="history-list">{history.map(h=><div className="history-item" key={h.id}><strong>{t(h.status_label_key)}</strong><span>{new Date(h.changed_at).toLocaleString()}</span>{h.note&&<p>{h.note}</p>}</div>)}</div>}</aside></div>
       <div className="modal-actions"><button type="button" className="secondary" onClick={()=>setPrinting(editing)}>{t("print.preview")}</button><button type="button" className="secondary" onClick={()=>setEditing(null)}>{t("common.close")}</button><button className="primary" disabled={saving||!editForm.reported_fault.trim()}>{saving?t("common.saving"):t("common.save")}</button></div></form></section></div>}
 

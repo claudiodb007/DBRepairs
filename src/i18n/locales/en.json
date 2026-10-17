@@ -152,5 +152,19 @@
   "settings.portableConfirm": "Restore this portable backup? All current data will be replaced after a native safety backup is created.",
   "settings.portableInvalid": "Choose a valid .dbrepairs portable backup.",
   "settings.portableError": "Could not create the portable backup.",
-  "settings.portableRestoreError": "Could not restore the portable backup. Current data was not changed."
+  "settings.portableRestoreError": "Could not restore the portable backup. Current data was not changed.",
+  "attachments.title": "Attachments",
+  "attachments.hint": "Documents and images linked to this customer. PDF, JPG, PNG, DOC or DOCX, up to 10 MB.",
+  "attachments.add": "Add file",
+  "attachments.empty": "This customer has no attachments yet.",
+  "attachments.download": "Download",
+  "attachments.working": "Working…",
+  "attachments.invalidType": "Unsupported file type. Use PDF, JPG, PNG, DOC or DOCX.",
+  "attachments.tooLarge": "The file must be no larger than 10 MB.",
+  "attachments.uploadError": "Could not add the attachment.",
+  "attachments.downloadError": "Could not download the attachment.",
+  "attachments.deleteConfirm": "Delete attachment {name}?",
+  "attachments.deleteError": "Could not delete the attachment.",
+  "attachments.repairHint": "Documents and images linked to this repair. PDF, JPG, PNG, DOC or DOCX, up to 10 MB.",
+  "attachments.repairEmpty": "This repair has no attachments yet."
 }

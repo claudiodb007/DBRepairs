@@ -9,6 +9,14 @@ import {
 } from "../data/customers";
 import { useI18n } from "../i18n/I18nProvider";
 import { listRepairsByCustomer, Repair } from "../data/repairs";
+import {
+  addCustomerAttachment,
+  CustomerAttachment,
+  deleteCustomerAttachment,
+  downloadCustomerAttachment,
+  listCustomerAttachments,
+  validateCustomerAttachment,
+} from "../data/customerAttachments";
 
 const emptyCustomer: CustomerInput = {
   name: "",
@@ -44,6 +52,9 @@ export default function CustomersPage() {
   const [saving, setSaving] = useState(false);
   const [customerRepairs, setCustomerRepairs] = useState<Repair[]>([]);
   const [customerRepairsLoading, setCustomerRepairsLoading] = useState(false);
+  const [attachments, setAttachments] = useState<CustomerAttachment[]>([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
 
   const refresh = useCallback(async (query = search) => {
     setLoading(true);
@@ -66,6 +77,7 @@ export default function CustomersPage() {
   function openCreate() {
     setEditing(null);
     setCustomerRepairs([]);
+    setAttachments([]);
     setForm(emptyCustomer);
     setError("");
     setFormOpen(true);
@@ -76,23 +88,35 @@ export default function CustomersPage() {
     setForm(toInput(customer));
     setError("");
     setCustomerRepairs([]);
+    setAttachments([]);
     setCustomerRepairsLoading(true);
+    setAttachmentsLoading(true);
     setFormOpen(true);
+
     try {
-      setCustomerRepairs(await listRepairsByCustomer(customer.id));
+      const [repairs, files] = await Promise.all([
+        listRepairsByCustomer(customer.id),
+        listCustomerAttachments(customer.id),
+      ]);
+
+      setCustomerRepairs(repairs);
+      setAttachments(files);
     } catch (cause) {
       console.error(cause);
       setError(t("common.databaseError"));
     } finally {
       setCustomerRepairsLoading(false);
+      setAttachmentsLoading(false);
     }
   }
 
   function closeForm() {
-    if (saving) return;
+    if (saving || attachmentBusy) return;
+
     setFormOpen(false);
     setEditing(null);
     setCustomerRepairs([]);
+    setAttachments([]);
     setForm(emptyCustomer);
   }
 
@@ -129,6 +153,100 @@ export default function CustomersPage() {
       console.error(cause);
       setError(t("customers.deleteBlocked"));
     }
+  }
+
+  async function uploadAttachment(file: File | undefined) {
+    if (!editing || !file) return;
+
+    setError("");
+
+    try {
+      validateCustomerAttachment(file);
+      setAttachmentBusy(true);
+
+      await addCustomerAttachment(editing.id, file);
+
+      setAttachments(
+        await listCustomerAttachments(editing.id),
+      );
+    } catch (cause) {
+      console.error(cause);
+
+      const reason =
+        cause instanceof Error ? cause.message : "";
+
+      if (reason === "unsupported-type") {
+        setError(t("attachments.invalidType"));
+      } else if (reason === "file-too-large") {
+        setError(t("attachments.tooLarge"));
+      } else {
+        setError(t("attachments.uploadError"));
+      }
+    } finally {
+      setAttachmentBusy(false);
+    }
+  }
+
+  async function downloadAttachment(
+    attachment: CustomerAttachment,
+  ) {
+    setError("");
+
+    try {
+      setAttachmentBusy(true);
+      await downloadCustomerAttachment(attachment);
+    } catch (cause) {
+      console.error(cause);
+      setError(t("attachments.downloadError"));
+    } finally {
+      setAttachmentBusy(false);
+    }
+  }
+
+  async function removeAttachment(
+    attachment: CustomerAttachment,
+  ) {
+    if (
+      !window.confirm(
+        t("attachments.deleteConfirm").replace(
+          "{name}",
+          attachment.filename,
+        ),
+      )
+    ) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      setAttachmentBusy(true);
+
+      await deleteCustomerAttachment(attachment);
+
+      if (editing) {
+        setAttachments(
+          await listCustomerAttachments(editing.id),
+        );
+      }
+    } catch (cause) {
+      console.error(cause);
+      setError(t("attachments.deleteError"));
+    } finally {
+      setAttachmentBusy(false);
+    }
+  }
+
+  function formatBytes(size: number) {
+    if (size < 1024) {
+      return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+      return `${(size / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(size / 1024 / 1024).toFixed(1)} MB`;
   }
 
   return (
@@ -239,6 +357,104 @@ export default function CustomersPage() {
                   <textarea rows={4} value={form.notes} onChange={(event) => updateField("notes", event.target.value)} />
                 </label>
               </div>
+
+              {editing && (
+                <section className="customer-attachments-section">
+                  <div className="customer-repairs-head">
+                    <div>
+                      <h3>{t("attachments.title")}</h3>
+                      <p>{t("attachments.hint")}</p>
+                    </div>
+
+                    <label
+                      className={`secondary small file-button ${
+                        attachmentBusy
+                          ? "disabled-file-button"
+                          : ""
+                      }`}
+                    >
+                      {attachmentBusy
+                        ? t("attachments.working")
+                        : `+ ${t("attachments.add")}`}
+
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        disabled={attachmentBusy}
+                        onChange={(event) => {
+                          const file =
+                            event.currentTarget.files?.[0];
+
+                          event.currentTarget.value = "";
+
+                          void uploadAttachment(file);
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {attachmentsLoading ? (
+                    <div className="customer-repairs-empty">
+                      {t("common.loading")}
+                    </div>
+                  ) : attachments.length === 0 ? (
+                    <div className="customer-repairs-empty">
+                      {t("attachments.empty")}
+                    </div>
+                  ) : (
+                    <div className="attachment-list">
+                      {attachments.map((attachment) => (
+                        <div
+                          className="attachment-item"
+                          key={attachment.id}
+                        >
+                          <div className="attachment-info">
+                            <strong title={attachment.filename}>
+                              {attachment.filename}
+                            </strong>
+
+                            <span>
+                              {formatBytes(attachment.size)}
+                              {" · "}
+                              {new Date(
+                                attachment.created_at,
+                              ).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="row-actions">
+                            <button
+                              type="button"
+                              className="secondary small"
+                              disabled={attachmentBusy}
+                              onClick={() =>
+                                void downloadAttachment(
+                                  attachment,
+                                )
+                              }
+                            >
+                              {t("attachments.download")}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="danger-link small"
+                              disabled={attachmentBusy}
+                              onClick={() =>
+                                void removeAttachment(
+                                  attachment,
+                                )
+                              }
+                            >
+                              {t("common.delete")}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
 
               {editing && (
                 <section className="customer-repairs-section">

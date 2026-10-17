@@ -152,5 +152,19 @@
   "settings.portableConfirm": "Repor esta cópia portátil? Todos os dados atuais serão substituídos depois de ser criada uma cópia nativa de segurança.",
   "settings.portableInvalid": "Escolhe uma cópia portátil .dbrepairs válida.",
   "settings.portableError": "Não foi possível criar a cópia portátil.",
-  "settings.portableRestoreError": "Não foi possível repor a cópia portátil. Os dados atuais não foram alterados."
+  "settings.portableRestoreError": "Não foi possível repor a cópia portátil. Os dados atuais não foram alterados.",
+  "attachments.title": "Anexos",
+  "attachments.hint": "Documentos e imagens associados à ficha deste cliente. PDF, JPG, PNG, DOC ou DOCX, até 10 MB.",
+  "attachments.add": "Adicionar ficheiro",
+  "attachments.empty": "Este cliente ainda não tem anexos.",
+  "attachments.download": "Descarregar",
+  "attachments.working": "A processar…",
+  "attachments.invalidType": "Tipo de ficheiro não suportado. Usa PDF, JPG, PNG, DOC ou DOCX.",
+  "attachments.tooLarge": "O ficheiro deve ter no máximo 10 MB.",
+  "attachments.uploadError": "Não foi possível adicionar o anexo.",
+  "attachments.downloadError": "Não foi possível descarregar o anexo.",
+  "attachments.deleteConfirm": "Eliminar o anexo {name}?",
+  "attachments.deleteError": "Não foi possível eliminar o anexo.",
+  "attachments.repairHint": "Documentos e imagens associados a esta reparação. PDF, JPG, PNG, DOC ou DOCX, até 10 MB.",
+  "attachments.repairEmpty": "Esta reparação ainda não tem anexos."
 }

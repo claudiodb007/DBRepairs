@@ -152,5 +152,19 @@
   "settings.portableConfirm": "Restaurer cette sauvegarde portable ? Toutes les données actuelles seront remplacées après la création d’une sauvegarde native de sécurité.",
   "settings.portableInvalid": "Choisissez une sauvegarde portable .dbrepairs valide.",
   "settings.portableError": "Impossible de créer la sauvegarde portable.",
-  "settings.portableRestoreError": "Impossible de restaurer la sauvegarde portable. Les données actuelles n’ont pas été modifiées."
+  "settings.portableRestoreError": "Impossible de restaurer la sauvegarde portable. Les données actuelles n’ont pas été modifiées.",
+  "attachments.title": "Pièces jointes",
+  "attachments.hint": "Documents et images associés à ce client. PDF, JPG, PNG, DOC ou DOCX, jusqu’à 10 Mo.",
+  "attachments.add": "Ajouter un fichier",
+  "attachments.empty": "Ce client n’a encore aucune pièce jointe.",
+  "attachments.download": "Télécharger",
+  "attachments.working": "Traitement…",
+  "attachments.invalidType": "Type de fichier non pris en charge. Utilisez PDF, JPG, PNG, DOC ou DOCX.",
+  "attachments.tooLarge": "Le fichier ne doit pas dépasser 10 Mo.",
+  "attachments.uploadError": "Impossible d’ajouter la pièce jointe.",
+  "attachments.downloadError": "Impossible de télécharger la pièce jointe.",
+  "attachments.deleteConfirm": "Supprimer la pièce jointe {name} ?",
+  "attachments.deleteError": "Impossible de supprimer la pièce jointe.",
+  "attachments.repairHint": "Documents et images associés à cette réparation. PDF, JPG, PNG, DOC ou DOCX, jusqu’à 10 Mo.",
+  "attachments.repairEmpty": "Cette réparation n’a encore aucune pièce jointe."
 }
