@@ -4,7 +4,7 @@ body { margin: 0; min-width: 320px; min-height: 100vh; }
 button, select { font: inherit; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 220px 1fr; }
 .sidebar { background: #111827; color: white; padding: 24px 16px; }
-.brand { font-size: 24px; font-weight: 800; margin-bottom: 30px; }
+.brand { font-size: 20px; font-weight: 800; margin-bottom: 30px; }
 .brand span { font-size: 12px; font-weight: 600; opacity: .55; }
 nav { display: grid; gap: 6px; }
 nav button { border: 0; background: transparent; color: #cbd5e1; text-align: left; padding: 11px 12px; border-radius: 8px; cursor: pointer; }
@@ -115,7 +115,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 
 /* Branding + repair form */
 .brand { display:flex; align-items:center; gap:10px; }
-.brand img { width:42px; height:42px; border-radius:12px; object-fit:cover; }
+.brand img { width:38px; height:38px; border-radius:10px; object-fit:contain; }
 .brand > div { display:flex; align-items:baseline; gap:6px; }
 .repair-modal { width:min(760px,100%); }
 .slip-brand-wrap { display:flex !important; grid-template-columns:none !important; flex-direction:row; align-items:center; gap:2.5mm !important; }
