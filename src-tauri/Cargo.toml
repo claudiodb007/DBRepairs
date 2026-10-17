@@ -1,6 +1,6 @@
 [package]
 name = "dbrepairs"
-version = "0.2.0"
+version = "0.2.2"
 description = "Simple open-source repair shop manager"
 authors = ["DBRepairs contributors"]
 edition = "2021"
