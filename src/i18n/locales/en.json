@@ -13,6 +13,8 @@
   "repairs.emptyHint": "Recent repairs will appear here.",
   "repairs.empty": "There are no repairs yet.",
   "repair.new": "New repair",
+  "repair.number": "Repair",
+  "repair.customer": "Customer",
   "settings.language": "Language",
   "status.received": "Received",
   "status.diagnosis": "In diagnosis",

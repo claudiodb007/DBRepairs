@@ -13,6 +13,8 @@
   "repairs.emptyHint": "Las reparaciones recientes aparecerán aquí.",
   "repairs.empty": "Todavía no hay reparaciones.",
   "repair.new": "Nueva reparación",
+  "repair.number": "Reparación",
+  "repair.customer": "Cliente",
   "settings.language": "Idioma",
   "status.received": "Recibido",
   "status.diagnosis": "En diagnóstico",
